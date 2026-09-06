@@ -113,6 +113,12 @@ mein-projekt/
 
 ---
 
+## 🤖 GitHub Copilot
+
+Die projektweite Copilot-Konfiguration liegt unter `.github/`. Allgemeine Arbeitsregeln stehen in [`copilot-instructions.md`](.github/copilot-instructions.md). Fachliche, mehrstufige Prüfabläufe werden als on-demand Skills unter [`.github/skills/`](.github/skills/) gepflegt, insbesondere für Quellen-Provenienz und evidenzbasierte RAG-Antworten.
+
+Neue Skills sollten nur wiederholbare Workflows beschreiben, konkrete Projektbefehle aus vorhandenen Manifesten ableiten und ihre Verfahren mit Tests oder Fixtures überprüfbar machen. Persönliche Copilot-Einstellungen gehören nicht in das Repository.
+
 ## 🎓 Mitwirken & Zusammenarbeit für Studierende
 
 Politiklar ist interdisziplinär konzipiert. Wir bieten Studierenden der Informatik, Politikwissenschaft, Sozialwissenschaften und des Datenjournalismus die Möglichkeit, praktische Erfahrungen an einem echten Open-Source-Projekt zu sammeln.
