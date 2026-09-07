@@ -1,0 +1,3 @@
+[console_scripts]
+politiklar-crawl = crawler.__main__:main
+politiklar-import-member = crawler.__main__:main

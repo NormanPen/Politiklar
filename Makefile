@@ -1,0 +1,70 @@
+.PHONY: help crawler-install crawler-fetch member-import vote-import speeches-import db db-down db-logs db-ps db-shell db-migrate db-migrate-down db-prod db-prod-down
+
+COMPOSE_DEV = docker compose --env-file .env.development -f docker-compose.yml -f docker-compose.dev.yml
+COMPOSE_PROD = docker compose --env-file .env.production -f docker-compose.yml
+
+help:
+	@printf '%s\n' \
+		'Environment:' \
+		'  db                 Start local PostgreSQL' \
+		'  db-down            Stop local PostgreSQL' \
+		'  db-ps              Show local PostgreSQL status' \
+		'  db-shell           Open a local PostgreSQL shell' \
+		'  db-migrate         Apply database migrations' \
+		'  db-migrate-down    Roll back the latest migration' \
+		'  db-prod            Start PostgreSQL with production settings' \
+		'' \
+		'Crawler:' \
+		'  crawler-install    Create the virtual environment and install dependencies' \
+		'  crawler-fetch URL= Retrieve source metadata and archive the response' \
+		'  member-import URL= Import one official Bundestag biography' \
+		'  vote-import URL=   Import one official named-vote XLSX list' \
+		'  speeches-import URL= Import one official plenary-protocol XML file'
+
+crawler-install:
+	python3 -m venv apps/backend/.venv
+	apps/backend/.venv/bin/python -m pip install --upgrade pip
+	apps/backend/.venv/bin/python -m pip install -e 'apps/backend[dev]'
+
+crawler-fetch:
+	@test -n "$(URL)" || (echo "Usage: make crawler-fetch URL=https://example.org" && exit 1)
+	apps/backend/.venv/bin/politiklar-crawl fetch "$(URL)"
+
+member-import:
+	@test -n "$(URL)" || (echo "Usage: make member-import URL=https://www.bundestag.de/abgeordnete/biografien/..." && exit 1)
+	set -a && . ./.env.development && set +a && apps/backend/.venv/bin/politiklar-crawl import-biography "$(URL)"
+
+vote-import:
+	@test -n "$(URL)" || (echo "Usage: make vote-import URL=https://www.bundestag.de/resource/blob/...xlsx" && exit 1)
+	set -a && . ./.env.development && set +a && apps/backend/.venv/bin/politiklar-crawl import-named-vote "$(URL)"
+
+speeches-import:
+	@test -n "$(URL)" || (echo "Usage: make speeches-import URL=https://www.bundestag.de/resource/blob/...xml" && exit 1)
+	set -a && . ./.env.development && set +a && apps/backend/.venv/bin/politiklar-crawl import-protocol "$(URL)"
+
+db-migrate:
+	cd apps/backend && set -a && . ../../.env.development && set +a && .venv/bin/alembic upgrade head
+
+db-migrate-down:
+	cd apps/backend && set -a && . ../../.env.development && set +a && .venv/bin/alembic downgrade -1
+
+db:
+	$(COMPOSE_DEV) up -d postgres
+
+db-down:
+	$(COMPOSE_DEV) stop postgres
+
+db-logs:
+	$(COMPOSE_DEV) logs -f postgres
+
+db-ps:
+	$(COMPOSE_DEV) ps postgres
+
+db-shell:
+	$(COMPOSE_DEV) exec postgres sh -c 'psql -U "$$POSTGRES_USER" -d "$$POSTGRES_DB"'
+
+db-prod:
+	$(COMPOSE_PROD) up -d postgres
+
+db-prod-down:
+	$(COMPOSE_PROD) stop postgres

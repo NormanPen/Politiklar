@@ -1,0 +1,11 @@
+.env
+.env.development
+.env.production
+.venv/
+apps/backend/.venv/
+__pycache__/
+*.py[cod]
+var/source-archive/
+!.env.example
+!.env.development.example
+!.env.production.example
