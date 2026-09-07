@@ -25,6 +25,21 @@ Die lokale PostgreSQL-Datenbank ist unter `127.0.0.1:5432` erreichbar. `make db-
 
 In Produktion bleibt PostgreSQL im Compose-Netzwerk: Der Produktionsaufruf verwendet kein Port-Mapping fuer die Datenbank. Erst spaetere App-Container verbinden sich mit `postgres:5432`.
 
+## Backend-API
+
+Der FastAPI-Server wird lokal über Make oder direkt über das CLI-Skript gestartet:
+
+```bash
+make api-dev
+# oder
+apps/backend/.venv/bin/politiklar-api --reload --port 8000
+```
+
+- Interaktive OpenAPI-Dokumentation (Swagger UI): `http://localhost:8000/docs`
+- ReDoc-Dokumentation: `http://localhost:8000/redoc`
+- Liveness- & Readiness-Probes: `http://localhost:8000/healthz` und `http://localhost:8000/api/v1/health`
+
+
 ## Migrationen
 
 ```bash

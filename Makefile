@@ -1,4 +1,4 @@
-.PHONY: help crawler-install crawler-fetch member-import vote-import speeches-import speaker-verify bundestag-import bundestag-refresh db db-down db-logs db-ps db-shell db-migrate db-migrate-down db-prod db-prod-down
+.PHONY: help crawler-install crawler-fetch member-import vote-import speeches-import speaker-verify bundestag-import bundestag-refresh db db-down db-logs db-ps db-shell db-migrate db-migrate-down db-prod db-prod-down api-dev api-serve
 
 COMPOSE_DEV = docker compose --env-file .env.development -f docker-compose.yml -f docker-compose.dev.yml
 COMPOSE_PROD = docker compose --env-file .env.production -f docker-compose.yml
@@ -13,6 +13,10 @@ help:
 		'  db-migrate         Apply database migrations' \
 		'  db-migrate-down    Roll back the latest migration' \
 		'  db-prod            Start PostgreSQL with production settings' \
+		'' \
+		'API:' \
+		'  api-dev            Start local development API server with auto-reload' \
+		'  api-serve          Start production API server' \
 		'' \
 		'Crawler:' \
 		'  crawler-install    Create the virtual environment and install dependencies' \
@@ -81,3 +85,9 @@ db-prod:
 
 db-prod-down:
 	$(COMPOSE_PROD) stop postgres
+
+api-dev:
+	set -a && . ./.env.development && set +a && apps/backend/.venv/bin/uvicorn api.main:app --reload --host 0.0.0.0 --port $${PORT:-8000}
+
+api-serve:
+	set -a && . ./.env.development && set +a && apps/backend/.venv/bin/uvicorn api.main:app --host 0.0.0.0 --port $${PORT:-8000}
