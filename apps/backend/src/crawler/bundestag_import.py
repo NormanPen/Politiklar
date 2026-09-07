@@ -2,7 +2,7 @@
 
 from dataclasses import asdict, dataclass
 from time import sleep
-from urllib.parse import urlencode
+from urllib.parse import urlencode, urljoin
 
 from selectolax.parser import HTMLParser
 from sqlalchemy.orm import Session
@@ -71,32 +71,60 @@ def run_bundestag_import(
 
 def discover_links(endpoint: str, href_fragment: str, settings: Settings, limit: int | None = None) -> list[str]:
     """Collect unique official links from a paginated Bundestag filter-list endpoint."""
-    page_size = 50
     offset = 0
     discovered: list[str] = []
     known_urls: set[str] = set()
     while limit is None or len(discovered) < limit:
-        query = urlencode({"limit": page_size, "offset": offset})
+        query = urlencode({"offset": offset})
         document = fetch_document(f"{endpoint}?{query}", settings)
-        page_urls = _links_with_fragment(document.content.decode("utf-8"), href_fragment)
+        page_urls = _links_with_fragment(document.content.decode("utf-8"), href_fragment, base_url=endpoint)
         new_urls = [url for url in page_urls if url not in known_urls]
-        if not new_urls:
-            break
         for url in new_urls:
             known_urls.add(url)
             discovered.append(url)
             if limit is not None and len(discovered) == limit:
                 return discovered
-        if len(page_urls) < page_size:
+
+        headers_lower = {k.lower(): v for k, v in document.response_headers.items()}
+        hits_count: int | None = None
+        loaded_count: int | None = None
+
+        if "hits-count" in headers_lower:
+            try:
+                hits_count = int(headers_lower["hits-count"])
+            except ValueError:
+                hits_count = None
+
+        if "loaded-count" in headers_lower:
+            try:
+                loaded_count = int(headers_lower["loaded-count"])
+            except ValueError:
+                loaded_count = None
+
+        step = loaded_count if loaded_count is not None else len(page_urls)
+        if step <= 0:
             break
-        offset += page_size
+
+        if not new_urls and (hits_count is None or offset + step >= hits_count):
+            break
+
+        offset += step
+        if hits_count is not None and offset >= hits_count:
+            break
+
         sleep(1 / settings.crawler_requests_per_second)
     return discovered
 
 
-def _links_with_fragment(html: str, href_fragment: str) -> list[str]:
+def _links_with_fragment(html: str, href_fragment: str, base_url: str | None = None) -> list[str]:
     document = HTMLParser(html)
-    return [link.attributes["href"] for link in document.css("a[href]") if href_fragment in link.attributes["href"]]
+    urls: list[str] = []
+    for link in document.css("a[href]"):
+        href = link.attributes.get("href", "")
+        if href_fragment in href:
+            resolved = urljoin(base_url, href) if base_url else href
+            urls.append(resolved)
+    return urls
 
 
 def _import_one(report: ImportReport, source_type: str, url: str, importer, settings: Settings) -> None:
