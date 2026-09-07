@@ -1,4 +1,4 @@
-.PHONY: help up down ps logs crawler-install crawler-fetch member-import vote-import speeches-import speaker-verify bundestag-import bundestag-refresh db db-down db-logs db-ps db-shell db-migrate db-migrate-down db-prod db-prod-down api-dev api-serve docker-build api-docker api-docker-down api-docker-logs crawler-docker
+.PHONY: help up down ps logs crawler-install crawler-fetch member-import vote-import speeches-import speaker-verify bundestag-import bundestag-refresh db db-down db-logs db-ps db-shell db-migrate db-migrate-down db-prod db-prod-down api-dev api-serve docker-build api-docker api-docker-down api-docker-logs crawler-docker web-build web-docker web-docker-down web-docker-logs web-docker-shell
 
 COMPOSE_DEV = docker compose --env-file .env.development -f docker-compose.yml -f docker-compose.dev.yml
 COMPOSE_PROD = docker compose --env-file .env.production -f docker-compose.yml
@@ -6,7 +6,7 @@ COMPOSE_PROD = docker compose --env-file .env.production -f docker-compose.yml
 help:
 	@printf '%s\n' \
 		'All Services (Docker):' \
-		'  up                 Start all services in Docker (Postgres + API)' \
+		'  up                 Start all services in Docker (Postgres + API + Web)' \
 		'  down               Stop all Docker services' \
 		'  ps                 Show status of all Docker containers' \
 		'  logs               Follow logs of all Docker containers' \
@@ -21,10 +21,15 @@ help:
 		'  db-prod            Start PostgreSQL with production settings' \
 		'' \
 		'Docker Services:' \
-		'  docker-build       Build backend Docker image' \
+		'  docker-build       Build all Docker images (API + Web)' \
 		'  api-docker         Start API container with Docker Compose' \
 		'  api-docker-down    Stop API container' \
 		'  api-docker-logs    Show API container logs' \
+		'  web-build          Build Web Docker image' \
+		'  web-docker         Start Web container with Docker Compose' \
+		'  web-docker-down    Stop Web container' \
+		'  web-docker-logs    Show Web container logs' \
+		'  web-docker-shell   Open a shell in Web container' \
 		'  crawler-docker CMD= Run crawler command in Docker container' \
 
 		'' \
@@ -119,7 +124,7 @@ api-serve:
 	set -a && . ./.env.development && set +a && apps/backend/.venv/bin/uvicorn api.main:app --host 0.0.0.0 --port $${PORT:-8000}
 
 docker-build:
-	$(COMPOSE_DEV) build api
+	$(COMPOSE_DEV) build api web
 
 api-docker:
 	$(COMPOSE_DEV) up -d api
@@ -129,6 +134,21 @@ api-docker-down:
 
 api-docker-logs:
 	$(COMPOSE_DEV) logs -f api
+
+web-build:
+	$(COMPOSE_DEV) build web
+
+web-docker:
+	$(COMPOSE_DEV) up -d web
+
+web-docker-down:
+	$(COMPOSE_DEV) stop web
+
+web-docker-logs:
+	$(COMPOSE_DEV) logs -f web
+
+web-docker-shell:
+	$(COMPOSE_DEV) exec web sh
 
 crawler-docker:
 	@test -n "$(CMD)" || (echo "Usage: make crawler-docker CMD=\"import-all --help\"" && exit 1)

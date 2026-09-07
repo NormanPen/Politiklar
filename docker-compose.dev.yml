@@ -12,3 +12,20 @@ services:
     volumes:
       - ./apps/backend/src:/app/src
       - ./var/source-archive:/var/lib/politiklar/source-archive
+
+  web:
+    build:
+      target: dev
+    ports:
+      - "127.0.0.1:${WEB_PORT:-3000}:3000"
+    environment:
+      NODE_ENV: development
+      PORT: 3000
+      HOSTNAME: "0.0.0.0"
+      WATCHPACK_POLLING: "true"
+      INTERNAL_API_URL: http://api:8000
+      NEXT_PUBLIC_API_URL: http://localhost:${PORT:-8000}
+    volumes:
+      - ./apps/web:/app
+      - /app/node_modules
+      - /app/.next

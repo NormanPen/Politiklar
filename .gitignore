@@ -9,3 +9,5 @@ var/source-archive/
 !.env.example
 !.env.development.example
 !.env.production.example
+apps/web/node_modules/
+apps/web/.next/
