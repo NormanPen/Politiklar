@@ -30,7 +30,7 @@ Der Python-Crawler kann einzelne Bundestag-Biografien, namentliche Abstimmungsli
 
 ## Projektregeln
 
-Die Projektregeln stehen in [copilot-instructions.md](.github/copilot-instructions.md). Fuer fachliche Reviews gibt es die [Quellen-Provenienz-Pruefung](.github/skills/source-provenance-review/SKILL.md) und die [RAG-Evidenz-Pruefung](.github/skills/rag-evidence-review/SKILL.md).
+Die verbindlichen Projektregeln für KI-Agenten und Entwicklung stehen in [AGENTS.md](AGENTS.md) (sowie [copilot-instructions.md](.github/copilot-instructions.md)). Für fachliche Workflows und Reviews stehen Workspace-Skills unter [.agents/skills](.agents/skills/) zur Verfügung (u. a. `source-provenance-review`, `bundestag-crawler`, `db-migrations` und `rag-evidence-review`).
 
 ## Lizenz
 
