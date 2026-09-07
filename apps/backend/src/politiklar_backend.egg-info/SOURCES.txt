@@ -4,9 +4,12 @@ src/core/settings.py
 src/crawler/__init__.py
 src/crawler/__main__.py
 src/crawler/bundestag_biography.py
+src/crawler/bundestag_import.py
 src/crawler/fetcher.py
 src/crawler/member_importer.py
+src/crawler/member_source_identifiers.py
 src/crawler/named_votes.py
+src/crawler/plenary_speeches.py
 src/db/__init__.py
 src/db/relational/__init__.py
 src/db/relational/base.py
@@ -19,6 +22,8 @@ src/politiklar_backend.egg-info/entry_points.txt
 src/politiklar_backend.egg-info/requires.txt
 src/politiklar_backend.egg-info/top_level.txt
 tests/test_bundestag_biography.py
+tests/test_bundestag_import.py
 tests/test_fetcher.py
 tests/test_models.py
 tests/test_named_votes.py
+tests/test_plenary_speeches.py

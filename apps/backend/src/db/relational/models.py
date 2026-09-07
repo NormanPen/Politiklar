@@ -59,6 +59,34 @@ class MemberExternalIdentifier(Base):
     source_document_id: Mapped[UUID] = mapped_column(ForeignKey("source_documents.id"))
 
 
+class MemberSourceIdentifier(Base):
+    __tablename__ = "member_source_identifiers"
+    __table_args__ = (
+        CheckConstraint("verification_status IN ('pending_review', 'verified', 'rejected')", name="ck_member_source_identifier_status"),
+        UniqueConstraint("source_system", "source_identifier", name="uq_member_source_identifier"),
+    )
+
+    id: Mapped[UUID] = mapped_column(PG_UUID(as_uuid=True), primary_key=True, default=uuid4)
+    member_id: Mapped[UUID] = mapped_column(ForeignKey("bundestag_members.id", ondelete="CASCADE"))
+    source_document_id: Mapped[UUID] = mapped_column(ForeignKey("source_documents.id"))
+    source_system: Mapped[str] = mapped_column(String(100))
+    source_identifier: Mapped[str] = mapped_column(String(255))
+    verification_status: Mapped[str] = mapped_column(String(20), default="pending_review")
+    verified_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    verified_by: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+
+class MemberSourceIdentifierEvidence(Base):
+    __tablename__ = "member_source_identifier_evidence"
+    __table_args__ = (UniqueConstraint("member_source_identifier_id", "source_document_id", name="uq_member_source_identifier_evidence"),)
+
+    id: Mapped[UUID] = mapped_column(PG_UUID(as_uuid=True), primary_key=True, default=uuid4)
+    member_source_identifier_id: Mapped[UUID] = mapped_column(ForeignKey("member_source_identifiers.id", ondelete="CASCADE"))
+    source_document_id: Mapped[UUID] = mapped_column(ForeignKey("source_documents.id"))
+    evidence_role: Mapped[str] = mapped_column(String(50))
+
+
 class MemberProfileSnapshot(Base):
     __tablename__ = "member_profile_snapshots"
     __table_args__ = (UniqueConstraint("member_id", "content_sha256", name="uq_member_profile_content"),)

@@ -36,6 +36,9 @@ erDiagram
     SOURCE_DOCUMENTS ||--o{ MEMBER_EXTERNAL_PROFILES : belegt
     SOURCE_DOCUMENTS ||--o{ MEMBER_AFFILIATIONS : belegt
     SOURCE_DOCUMENTS ||--o{ MEMBER_EXTERNAL_IDENTIFIERS : belegt
+    SOURCE_DOCUMENTS ||--o{ MEMBER_SOURCE_IDENTIFIERS : belegt
+    SOURCE_DOCUMENTS ||--o{ MEMBER_SOURCE_IDENTIFIER_EVIDENCE : belegt
+    MEMBER_SOURCE_IDENTIFIERS ||--o{ MEMBER_SOURCE_IDENTIFIER_EVIDENCE : hat
     SOURCE_DOCUMENTS ||--o{ MEMBER_IMAGE_CANDIDATES : belegt
     BUNDESTAG_MEMBERS ||--o{ MEMBER_TERMS : hat
     BUNDESTAG_MEMBERS ||--o{ MEMBER_PROFILE_SNAPSHOTS : hat
@@ -45,6 +48,7 @@ erDiagram
     BUNDESTAG_MEMBERS ||--o{ MEMBER_EXTERNAL_PROFILES : hat
     BUNDESTAG_MEMBERS ||--o{ MEMBER_AFFILIATIONS : hat
     BUNDESTAG_MEMBERS ||--o{ MEMBER_EXTERNAL_IDENTIFIERS : hat
+    BUNDESTAG_MEMBERS ||--o{ MEMBER_SOURCE_IDENTIFIERS : hat
     BUNDESTAG_MEMBERS ||--o{ MEMBER_IMAGE_CANDIDATES : hat
 
     SOURCE_DOCUMENTS {
@@ -78,11 +82,25 @@ erDiagram
         boolean license_approved
         string status
     }
+    MEMBER_SOURCE_IDENTIFIERS {
+        uuid member_id FK
+        string source_system
+        string source_identifier UK
+        string verification_status
+        datetime verified_at
+    }
+    MEMBER_SOURCE_IDENTIFIER_EVIDENCE {
+        uuid member_source_identifier_id FK
+        uuid source_document_id FK
+        string evidence_role
+    }
 ```
 
 `bundestag_members.mdb_id` ist eindeutig. Profil-, Buero-, Kontakt-, Mandats-, Profil-Link- und Rollenwerte sind ueber fachliche Content-Hashes idempotent. Externe Identifikatoren sind je `(namespace, identifier)` eindeutig.
 
 Portraits werden nur als Wikimedia-Commons-Kandidaten mit Autor, Attribution und Lizenzmetadaten modelliert. Der Status `approved` verlangt `license_approved = true`; ein partieller Unique-Index erlaubt hoechstens ein freigegebenes Bild pro Abgeordnetem.
+
+`member_source_identifiers` ordnet eine externe amtliche Kennung verbindlich einer MDB-ID zu. Fuer Plenarprotokolle lautet das Quellsystem `bundestag_plenary_speaker`. Jede verifizierte Zuordnung hat zwei Belege in `member_source_identifier_evidence`: die Bundestag-Biografie fuer die MDB-ID und das Plenarprotokoll fuer die Sprecher-ID. Nur ein Review mit beiden Belegen setzt den Status auf `verified`.
 
 ## Parlamentsereignisse
 
@@ -134,6 +152,8 @@ erDiagram
 | `member_external_profiles` | Auf der Biografie verlinkte externe Profile |
 | `member_affiliations` | Ausschuesse, Aemter und weitere Rollen |
 | `member_external_identifiers` | Verifizierte IDs anderer Quellsysteme |
+| `member_source_identifiers` | Gepruefte Zuordnung einer Quellsystem-ID zu einer MDB-ID |
+| `member_source_identifier_evidence` | Amtliche Biografie- und Protokollbelege fuer eine Zuordnung |
 | `member_image_candidates` | Lizenz- und Review-Workflow fuer Commons-Portraits |
 | `named_votes` | Amtliche namentliche Abstimmungen |
 | `named_vote_rows` | Amtliche Ergebniszeilen je Abstimmung |

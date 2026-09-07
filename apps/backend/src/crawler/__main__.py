@@ -4,7 +4,9 @@ import argparse
 import json
 
 from .fetcher import fetch_source
+from .bundestag_import import run_bundestag_import
 from .member_importer import import_biography
+from .member_source_identifiers import verify_plenary_speaker
 from .named_votes import import_named_vote
 from .plenary_speeches import import_plenary_protocol
 from core.settings import Settings
@@ -23,6 +25,16 @@ def main() -> None:
     vote_parser.add_argument("--title", help="Official vote title from the source list")
     speech_parser = subparsers.add_parser("import-protocol", help="Import one official Bundestag plenary protocol XML")
     speech_parser.add_argument("url", help="Official Bundestag protocol XML URL")
+    verify_parser = subparsers.add_parser("verify-plenary-speaker", help="Record a reviewed official mapping for a protocol speaker ID")
+    verify_parser.add_argument("--mdb-id", type=int, required=True, help="Verified Bundestag MDB ID")
+    verify_parser.add_argument("--speaker-id", required=True, help="Official speaker ID from a plenary protocol")
+    verify_parser.add_argument("--biography-evidence-url", required=True, help="Official Bundestag biography URL for the MDB ID")
+    verify_parser.add_argument("--protocol-evidence-url", required=True, help="Official protocol URL containing the speaker ID")
+    verify_parser.add_argument("--verified-by", required=True, help="Reviewer name or service account")
+    all_parser = subparsers.add_parser("import-all", help="Import all discoverable official Bundestag sources")
+    all_parser.add_argument("--dry-run", action="store_true", help="Discover sources without importing them")
+    all_parser.add_argument("--limit", type=int, help="Maximum sources to process per source family")
+    all_parser.add_argument("--refresh", action="store_true", help="Run the idempotent refresh mode")
     arguments = parser.parse_args()
 
     if arguments.command == "fetch":
@@ -38,9 +50,14 @@ def main() -> None:
         elif arguments.command == "import-named-vote":
             vote = import_named_vote(session, arguments.url, arguments.title)
             result = {"electoral_term": vote.electoral_term, "sitting_number": vote.sitting_number, "vote_number": vote.vote_number, "rows": len(vote.rows), "status": "imported"}
-        else:
+        elif arguments.command == "import-protocol":
             protocol = import_plenary_protocol(session, arguments.url)
             result = {"electoral_term": protocol.electoral_term, "sitting_number": protocol.sitting_number, "speeches": len(protocol.speeches), "status": "imported"}
+        elif arguments.command == "verify-plenary-speaker":
+            mapping = verify_plenary_speaker(session, arguments.mdb_id, arguments.speaker_id, arguments.biography_evidence_url, arguments.protocol_evidence_url, arguments.verified_by)
+            result = {"mdb_id": arguments.mdb_id, "speaker_source_id": mapping.source_identifier, "status": mapping.verification_status}
+        else:
+            result = run_bundestag_import(session, Settings(), dry_run=arguments.dry_run, limit=arguments.limit, refresh=arguments.refresh).to_dict()
     print(json.dumps(result, indent=2))
 
 

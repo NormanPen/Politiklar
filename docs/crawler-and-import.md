@@ -9,6 +9,21 @@ make crawler-install
 make help
 ```
 
+## Vollimport und Refresh
+
+```bash
+make bundestag-import
+make bundestag-refresh
+```
+
+`bundestag-import` entdeckt und importiert alle aktuell verlinkten Bundestag-Biografien, namentlichen Abstimmungslisten und Plenarprotokolle der 21. Wahlperiode. `bundestag-refresh` verwendet denselben idempotenten Ablauf fuer neue oder veraenderte Quellen. Beide Befehle geben einen Bericht mit entdeckten, importierten und fehlgeschlagenen Quellen aus.
+
+Vor einem grossen Lauf prueft ein begrenzter Trockenlauf die Discovery ohne Datenbankaenderung:
+
+```bash
+make bundestag-import DRY_RUN=1 LIMIT=5
+```
+
 ## Quellenabruf
 
 ```bash
@@ -42,6 +57,19 @@ make speeches-import URL=https://www.bundestag.de/resource/blob/1194732/21090.xm
 ```
 
 Der XML-Importer speichert Wahlperiode, Sitzung, amtliche Rede-ID, Sprecher-ID, Name, Fraktion und Wortlaut. Die Sprecher-ID des Protokolls ist noch nicht als MDB-ID verifiziert; deshalb wird auch hier keine Namenszuordnung geraten.
+
+Eine Sprecher-ID kann nach manueller Pruefung mit einem Abgeordneten verknuepft werden:
+
+```bash
+make speaker-verify \
+	MDB_ID=1043330 \
+	SPEAKER_ID=11004011 \
+	BIOGRAPHY_URL=https://www.bundestag.de/abgeordnete/biografien/... \
+	PROTOCOL_URL=https://www.bundestag.de/resource/blob/...xml \
+	VERIFIED_BY=name
+```
+
+Der Befehl prueft die MDB-ID gegen die Biografie und die Sprecher-ID gegen das Protokoll. Beide abgerufenen Quellen werden als Belege gespeichert. Danach verbindet der Importer alle schon gespeicherten Reden derselben Sprecher-ID mit dem Abgeordneten. Eine Sprecher-ID, die bereits einer anderen Person zugeordnet ist, wird abgelehnt.
 
 ## Noch nicht automatisiert
 

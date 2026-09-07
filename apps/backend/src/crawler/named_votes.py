@@ -60,7 +60,7 @@ def parse_named_vote_xlsx(content: bytes) -> ParsedNamedVote:
         electoral_term=_required_int(metadata, "wahlperiode"),
         sitting_number=_required_int(metadata, "sitzungnr"),
         vote_number=_required_int(metadata, "abstimmnr"),
-        rows=tuple(_parse_row(row) for row in vote_rows),
+        rows=tuple(_parse_row(row) for row in vote_rows if _is_member_vote_row(row)),
     )
 
 
@@ -118,6 +118,11 @@ def _parse_row(row: dict[str, object]) -> VoteRow:
         outcome=outcome,
         remark=_optional_string(row.get("bemerkung")),
     )
+
+
+def _is_member_vote_row(row: dict[str, object]) -> bool:
+    """Exclude blank worksheet rows without discarding a person with an unknown result."""
+    return any(_optional_string(row.get(column)) for column in ("name", "vorname", "bezeichnung"))
 
 
 def _get_or_create_source(session: Session, requested_url: str, document: FetchedDocument) -> SourceDocument:

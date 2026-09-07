@@ -12,11 +12,14 @@ def test_parser_distinguishes_all_official_vote_outcomes() -> None:
     sheet.append([21, 90, 8, "SPD", "Beispiel", "Ada", None, 1, 0, 0, 0, 0, "Ada Beispiel", None])
     sheet.append([21, 90, 8, "SPD", "Beispiel", "Bert", None, 0, 0, 1, 0, 0, "Bert Beispiel", None])
     sheet.append([21, 90, 8, "SPD", "Beispiel", "Cem", None, 0, 0, 0, 0, 1, "Cem Beispiel", None])
+    sheet.append([21, 90, 8, "SPD", "Beispiel", "Dora", None, 0, 0, 0, 0, 0, "Dora Beispiel", None])
+    sheet.append([None] * 14)
+    sheet.append([None] * 14)
     buffer = BytesIO()
     workbook.save(buffer)
 
     vote = parse_named_vote_xlsx(buffer.getvalue())
 
     assert (vote.electoral_term, vote.sitting_number, vote.vote_number) == (21, 90, 8)
-    assert [row.outcome for row in vote.rows] == ["yes", "abstained", "not_voted"]
-    assert [row.raw_outcome for row in vote.rows] == ["ja", "enthaltung", "nichtabgegeben"]
+    assert [row.outcome for row in vote.rows] == ["yes", "abstained", "not_voted", "unknown"]
+    assert [row.raw_outcome for row in vote.rows] == ["ja", "enthaltung", "nichtabgegeben", ""]

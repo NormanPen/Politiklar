@@ -1,4 +1,4 @@
-.PHONY: help crawler-install crawler-fetch member-import vote-import speeches-import db db-down db-logs db-ps db-shell db-migrate db-migrate-down db-prod db-prod-down
+.PHONY: help crawler-install crawler-fetch member-import vote-import speeches-import speaker-verify bundestag-import bundestag-refresh db db-down db-logs db-ps db-shell db-migrate db-migrate-down db-prod db-prod-down
 
 COMPOSE_DEV = docker compose --env-file .env.development -f docker-compose.yml -f docker-compose.dev.yml
 COMPOSE_PROD = docker compose --env-file .env.production -f docker-compose.yml
@@ -19,7 +19,10 @@ help:
 		'  crawler-fetch URL= Retrieve source metadata and archive the response' \
 		'  member-import URL= Import one official Bundestag biography' \
 		'  vote-import URL=   Import one official named-vote XLSX list' \
-		'  speeches-import URL= Import one official plenary-protocol XML file'
+		'  speeches-import URL= Import one official plenary-protocol XML file' \
+		'  speaker-verify MDB_ID= SPEAKER_ID= BIOGRAPHY_URL= PROTOCOL_URL= VERIFIED_BY= Verify and link a protocol speaker ID' \
+		'  bundestag-import [LIMIT=] [DRY_RUN=1] Import all current official Bundestag source families' \
+		'  bundestag-refresh [LIMIT=] [DRY_RUN=1] Refresh all current official Bundestag source families'
 
 crawler-install:
 	python3 -m venv apps/backend/.venv
@@ -41,6 +44,16 @@ vote-import:
 speeches-import:
 	@test -n "$(URL)" || (echo "Usage: make speeches-import URL=https://www.bundestag.de/resource/blob/...xml" && exit 1)
 	set -a && . ./.env.development && set +a && apps/backend/.venv/bin/politiklar-crawl import-protocol "$(URL)"
+
+speaker-verify:
+	@test -n "$(MDB_ID)" -a -n "$(SPEAKER_ID)" -a -n "$(BIOGRAPHY_URL)" -a -n "$(PROTOCOL_URL)" -a -n "$(VERIFIED_BY)" || (echo "Usage: make speaker-verify MDB_ID=... SPEAKER_ID=... BIOGRAPHY_URL=https://www.bundestag.de/... PROTOCOL_URL=https://www.bundestag.de/... VERIFIED_BY=name" && exit 1)
+	set -a && . ./.env.development && set +a && apps/backend/.venv/bin/politiklar-crawl verify-plenary-speaker --mdb-id "$(MDB_ID)" --speaker-id "$(SPEAKER_ID)" --biography-evidence-url "$(BIOGRAPHY_URL)" --protocol-evidence-url "$(PROTOCOL_URL)" --verified-by "$(VERIFIED_BY)"
+
+bundestag-import:
+	set -a && . ./.env.development && set +a && apps/backend/.venv/bin/politiklar-crawl import-all $(if $(LIMIT),--limit $(LIMIT)) $(if $(DRY_RUN),--dry-run)
+
+bundestag-refresh:
+	set -a && . ./.env.development && set +a && apps/backend/.venv/bin/politiklar-crawl import-all --refresh $(if $(LIMIT),--limit $(LIMIT)) $(if $(DRY_RUN),--dry-run)
 
 db-migrate:
 	cd apps/backend && set -a && . ../../.env.development && set +a && .venv/bin/alembic upgrade head
