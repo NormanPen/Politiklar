@@ -51,6 +51,27 @@ make crawler-docker CMD="import-biography https://www.bundestag.de/..."
 - ReDoc-Dokumentation: `http://localhost:8000/redoc`
 - Liveness- & Readiness-Probes: `http://localhost:8000/healthz` und `http://localhost:8000/api/v1/health`
 
+## Web-Frontend (Next.js)
+
+### Als Docker-Container (Entwicklung mit Hot-Reload)
+```bash
+make web-build          # Baut das Web-Docker-Image
+make web-docker         # Startet den Web-Container (Port 3000)
+make web-docker-logs    # Zeigt Web-Logs im Livestream
+make web-docker-down    # Stoppt den Web-Container
+make web-docker-shell   # Öffnet Shell im Web-Container
+```
+Der lokale Quellcode in `apps/web` ist direkt per Volume im Entwicklungs-Container eingebunden. Änderungen an Seiten und Komponenten werden sofort via Hot-Reloading/Fast Refresh im Browser aktualisiert (`http://localhost:3000`).
+
+## Alle Dienste gemeinsam starten
+
+```bash
+make up    # Startet PostgreSQL, Backend-API und Web-Frontend im Hintergrund
+make ps    # Zeigt Status aller Container
+make logs  # Zeigt kombinierte Logs aller Container
+make down  # Stoppt alle Container
+```
+
 
 
 ## Migrationen
