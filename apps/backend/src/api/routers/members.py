@@ -60,13 +60,21 @@ def list_members(
         if group is not None:
             query = query.where(MemberProfileSnapshot.parliamentary_group.ilike(f"%{group}%"))
         if search is not None:
-            pattern = f"%{search}%"
-            query = query.where(
-                or_(
-                    MemberProfileSnapshot.first_name.ilike(pattern),
-                    MemberProfileSnapshot.last_name.ilike(pattern),
-                )
+            tokens = [token.strip() for token in search.split() if token.strip()]
+            full_name = func.concat(
+                func.coalesce(MemberProfileSnapshot.first_name, ""),
+                " ",
+                func.coalesce(MemberProfileSnapshot.last_name, ""),
             )
+            conds = [
+                MemberProfileSnapshot.first_name.ilike(f"%{search}%"),
+                MemberProfileSnapshot.last_name.ilike(f"%{search}%"),
+                full_name.ilike(f"%{search}%"),
+            ]
+            for token in tokens:
+                conds.append(MemberProfileSnapshot.first_name.ilike(f"%{token}%"))
+                conds.append(MemberProfileSnapshot.last_name.ilike(f"%{token}%"))
+            query = query.where(or_(*conds))
 
     query = query.distinct()
 

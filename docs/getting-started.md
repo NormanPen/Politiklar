@@ -27,17 +27,30 @@ In Produktion bleibt PostgreSQL im Compose-Netzwerk: Der Produktionsaufruf verwe
 
 ## Backend-API
 
-Der FastAPI-Server wird lokal über Make oder direkt über das CLI-Skript gestartet:
-
+### Lokal auf dem Host (Entwicklungsmodus mit Hot-Reload)
 ```bash
 make api-dev
 # oder
 apps/backend/.venv/bin/politiklar-api --reload --port 8000
 ```
 
+### Als Docker-Container (Docker Compose)
+```bash
+make docker-build       # Baut das einheitliche politiklar-backend Image
+make api-docker         # Startet den API-Container im Hintergrund
+make api-docker-logs    # Zeigt Container-Logs an
+make api-docker-down    # Stoppt den API-Container
+```
+
+Crawler-Kommandos im Container ausführen:
+```bash
+make crawler-docker CMD="import-biography https://www.bundestag.de/..."
+```
+
 - Interaktive OpenAPI-Dokumentation (Swagger UI): `http://localhost:8000/docs`
 - ReDoc-Dokumentation: `http://localhost:8000/redoc`
 - Liveness- & Readiness-Probes: `http://localhost:8000/healthz` und `http://localhost:8000/api/v1/health`
+
 
 
 ## Migrationen

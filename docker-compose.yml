@@ -15,5 +15,28 @@ services:
       timeout: 5s
       retries: 5
 
+  api:
+    build:
+      context: ./apps/backend
+      dockerfile: Dockerfile
+    image: politiklar-backend:latest
+    container_name: politiklar-api
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: ${DATABASE_URL:?Set DATABASE_URL in the selected environment file}
+      CRAWLER_SOURCE_ARCHIVE_PATH: ${CRAWLER_SOURCE_ARCHIVE_PATH:-/var/lib/politiklar/source-archive}
+      API_CORS_ORIGINS: ${API_CORS_ORIGINS:-http://localhost:3000}
+    volumes:
+      - source_archive:/var/lib/politiklar/source-archive
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://127.0.0.1:8000/healthz || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+
 volumes:
   postgres_data:
+  source_archive:
