@@ -5,8 +5,8 @@ flowchart TB
     Bundestag[Bundestag.de und Open Data] --> Crawler[Python-Crawler]
     Crawler --> Archive[Lokales Quellenarchiv]
     Crawler --> Database[(PostgreSQL)]
-    Database --> FutureAPI[Geplante Backend-API]
-    FutureAPI --> FutureWeb[Geplante Web-Anwendung]
+    Database --> API[FastAPI Backend-API]
+    API --> FutureWeb[Geplante Web-Anwendung]
     Docker[Docker Compose] --> Database
     Volume[(postgres_data Volume)] --> Database
 ```
@@ -18,12 +18,13 @@ flowchart TB
 - Python-Crawler mit HTTP-Provenienz und Quellenarchiv
 - Alembic-Migrationen
 - Importer fuer einzelne Bundestag-Biografien, namentliche Abstimmungen und Plenarprotokolle
+- FastAPI Backend-API (`apps/backend/src/api/`) mit OpenAPI-Dokumentation (`/docs`), Healthchecks, Quellenprovenienz, Abgeordneten-, Abstimmungs- und Reden-Endpunkten
 
 ## Noch geplant
 
 - Vollstaendige Mitgliederdiscovery
 - Drucksachenimport mit konfiguriertem DIP-API-Key
 - Verifizierte Zuordnung von Abstimmungs- und Redezeilen zur MDB-ID
-- Backend-API, Web-Anwendung, RAG und MCP-Server
+- Web-Anwendung, RAG und MCP-Server
 
 Zurueck zur [Dokumentationsuebersicht](README.md).

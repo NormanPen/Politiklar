@@ -1,18 +1,36 @@
-.PHONY: help crawler-install crawler-fetch member-import vote-import speeches-import speaker-verify bundestag-import bundestag-refresh db db-down db-logs db-ps db-shell db-migrate db-migrate-down db-prod db-prod-down
+.PHONY: help up down ps logs crawler-install crawler-fetch member-import vote-import speeches-import speaker-verify bundestag-import bundestag-refresh db db-down db-logs db-ps db-shell db-migrate db-migrate-down db-prod db-prod-down api-dev api-serve docker-build api-docker api-docker-down api-docker-logs crawler-docker
 
 COMPOSE_DEV = docker compose --env-file .env.development -f docker-compose.yml -f docker-compose.dev.yml
 COMPOSE_PROD = docker compose --env-file .env.production -f docker-compose.yml
 
 help:
 	@printf '%s\n' \
+		'All Services (Docker):' \
+		'  up                 Start all services in Docker (Postgres + API)' \
+		'  down               Stop all Docker services' \
+		'  ps                 Show status of all Docker containers' \
+		'  logs               Follow logs of all Docker containers' \
+		'' \
 		'Environment:' \
-		'  db                 Start local PostgreSQL' \
+		'  db                 Start local PostgreSQL only' \
 		'  db-down            Stop local PostgreSQL' \
 		'  db-ps              Show local PostgreSQL status' \
 		'  db-shell           Open a local PostgreSQL shell' \
 		'  db-migrate         Apply database migrations' \
 		'  db-migrate-down    Roll back the latest migration' \
 		'  db-prod            Start PostgreSQL with production settings' \
+		'' \
+		'Docker Services:' \
+		'  docker-build       Build backend Docker image' \
+		'  api-docker         Start API container with Docker Compose' \
+		'  api-docker-down    Stop API container' \
+		'  api-docker-logs    Show API container logs' \
+		'  crawler-docker CMD= Run crawler command in Docker container' \
+
+		'' \
+		'API:' \
+		'  api-dev            Start local development API server with auto-reload' \
+		'  api-serve          Start production API server' \
 		'' \
 		'Crawler:' \
 		'  crawler-install    Create the virtual environment and install dependencies' \
@@ -61,6 +79,18 @@ db-migrate:
 db-migrate-down:
 	cd apps/backend && set -a && . ../../.env.development && set +a && .venv/bin/alembic downgrade -1
 
+up:
+	$(COMPOSE_DEV) up -d
+
+down:
+	$(COMPOSE_DEV) stop
+
+ps:
+	$(COMPOSE_DEV) ps
+
+logs:
+	$(COMPOSE_DEV) logs -f
+
 db:
 	$(COMPOSE_DEV) up -d postgres
 
@@ -81,3 +111,25 @@ db-prod:
 
 db-prod-down:
 	$(COMPOSE_PROD) stop postgres
+
+api-dev:
+	set -a && . ./.env.development && set +a && apps/backend/.venv/bin/uvicorn api.main:app --reload --host 0.0.0.0 --port $${PORT:-8000}
+
+api-serve:
+	set -a && . ./.env.development && set +a && apps/backend/.venv/bin/uvicorn api.main:app --host 0.0.0.0 --port $${PORT:-8000}
+
+docker-build:
+	$(COMPOSE_DEV) build api
+
+api-docker:
+	$(COMPOSE_DEV) up -d api
+
+api-docker-down:
+	$(COMPOSE_DEV) stop api
+
+api-docker-logs:
+	$(COMPOSE_DEV) logs -f api
+
+crawler-docker:
+	@test -n "$(CMD)" || (echo "Usage: make crawler-docker CMD=\"import-all --help\"" && exit 1)
+	$(COMPOSE_DEV) run --rm api politiklar-crawl $(CMD)

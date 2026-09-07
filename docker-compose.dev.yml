@@ -2,3 +2,13 @@ services:
   postgres:
     ports:
       - "127.0.0.1:${POSTGRES_PORT:-5432}:5432"
+
+  api:
+    ports:
+      - "127.0.0.1:${PORT:-8000}:8000"
+    environment:
+      DATABASE_URL: postgresql+psycopg://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}
+      CRAWLER_SOURCE_ARCHIVE_PATH: /var/lib/politiklar/source-archive
+    volumes:
+      - ./apps/backend/src:/app/src
+      - ./var/source-archive:/var/lib/politiklar/source-archive

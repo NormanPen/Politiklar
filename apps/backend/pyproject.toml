@@ -9,12 +9,14 @@ description = "Backend services and source crawlers for Politiklar"
 requires-python = ">=3.11"
 dependencies = [
     "alembic>=1.14,<2",
+    "fastapi>=0.115,<1",
     "httpx>=0.28,<0.29",
     "openpyxl>=3.1,<4",
     "psycopg[binary]>=3.2,<4",
     "pydantic-settings>=2.7,<3",
     "selectolax>=0.3,<0.4",
     "sqlalchemy>=2.0,<3",
+    "uvicorn[standard]>=0.34,<1",
 ]
 
 [project.optional-dependencies]
@@ -23,6 +25,7 @@ dev = [
 ]
 
 [project.scripts]
+politiklar-api = "api.__main__:main"
 politiklar-crawl = "crawler.__main__:main"
 politiklar-import-member = "crawler.__main__:main"
 
@@ -31,3 +34,10 @@ package-dir = {"" = "src"}
 
 [tool.setuptools.packages.find]
 where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+filterwarnings = [
+    "ignore:.*Using `httpx` with `starlette.testclient` is deprecated.*:Warning",
+    "ignore:.*The anyio.abc.BlockingPortal alias is deprecated.*:Warning",
+]

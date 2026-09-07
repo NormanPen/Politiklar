@@ -7,7 +7,7 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 class Settings(BaseSettings):
-    database_url: str
+    database_url: str = "postgresql+psycopg://politiklar:change-me-for-local-development@127.0.0.1:5432/politiklar"
     crawler_user_agent: str = "PolitiklarCrawler/0.1 (+https://github.com/)"
     crawler_request_timeout_seconds: PositiveFloat = 30.0
     crawler_requests_per_second: PositiveFloat = 1.0
@@ -19,5 +19,16 @@ class Settings(BaseSettings):
     bundestag_named_votes_url: HttpUrl = "https://www.bundestag.de/parlament/plenum/abstimmung/liste"
     wikidata_api_url: HttpUrl = "https://www.wikidata.org/w/api.php"
     wikimedia_commons_api_url: HttpUrl = "https://commons.wikimedia.org/w/api.php"
+    api_title: str = "Politiklar API"
+    api_version: str = "0.1.0"
+    api_cors_origins: str = "http://localhost:3000,http://127.0.0.1:3000"
 
-    model_config = SettingsConfigDict(extra="ignore")
+    @property
+    def cors_origins_list(self) -> list[str]:
+        return [origin.strip() for origin in self.api_cors_origins.split(",") if origin.strip()]
+
+    model_config = SettingsConfigDict(
+        extra="ignore",
+        env_file=(".env", ".env.development"),
+        env_file_encoding="utf-8",
+    )
