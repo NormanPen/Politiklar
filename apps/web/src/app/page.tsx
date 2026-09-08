@@ -1,69 +1,38 @@
-import Image from "next/image";
-import styles from "./page.module.css";
+import Link from "next/link";
 
 export default function Home() {
   return (
-    <div className={styles.page}>
-      <main className={styles.main}>
-        <Image
-          className={styles.logo}
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className={styles.intro}>
-          <h1>
-            To get started, edit the{" "}
-            <code className={styles.code}>page.tsx</code> file.
-          </h1>
-          <p>
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
-        </div>
-        <div className={styles.ctas}>
-          <a
-            className={styles.primary}
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className={styles.logo}
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={14}
-            />
-            Deploy Now
-          </a>
-          <a
-            className={styles.secondary}
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
-        </div>
-      </main>
+    <div className="max-w-4xl mx-auto px-6 py-16 space-y-8 text-center">
+      <div className="space-y-4">
+        <h1 className="text-4xl sm:text-5xl font-extrabold text-gray-900 tracking-tight">
+          Willkommen bei <span className="text-indigo-600">Politiklar</span>
+        </h1>
+        <p className="text-lg text-gray-600 max-w-2xl mx-auto">
+          Civic-Tech-Plattform für transparente und lückenlos nachvollziehbare Informationen aus offiziellen politischen Primärquellen des Deutschen Bundestages.
+        </p>
+      </div>
+
+      {/* Schnellzugriff auf Test-Routen */}
+      <div className="pt-4 flex flex-wrap justify-center gap-4">
+        <Link
+          href="/politicians"
+          className="px-5 py-3 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-sm shadow-sm transition"
+        >
+          Politiker-Demo (Jan van Aken) →
+        </Link>
+        <Link
+          href="/state-test"
+          className="px-5 py-3 rounded-xl bg-white hover:bg-gray-100 text-gray-800 font-semibold text-sm border border-gray-200 shadow-sm transition"
+        >
+          State-Management Test
+        </Link>
+        <Link
+          href="/about"
+          className="px-5 py-3 rounded-xl bg-white hover:bg-gray-100 text-gray-800 font-semibold text-sm border border-gray-200 shadow-sm transition"
+        >
+          Über uns
+        </Link>
+      </div>
     </div>
   );
 }
