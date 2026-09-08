@@ -11,3 +11,4 @@ var/source-archive/
 !.env.production.example
 apps/web/node_modules/
 apps/web/.next/
+.agents/**/mcp_config.json
