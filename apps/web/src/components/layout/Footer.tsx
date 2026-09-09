@@ -17,8 +17,11 @@ export default function Footer() {
         <div className="w-full border-t border-[#878787]" />
 
         {/* Group 5: 976px Breite (bei 1024px - 2x24px Padding), 64px Abstand zur Linie */}
-        <div className="pt-[64px] flex flex-col md:flex-row items-center justify-between gap-y-6 text-[12px] leading-[15px] font-normal text-[#000000]">
-          <p className="order-2 md:order-1 select-none">
+        <div
+          className="pt-[64px] flex flex-col md:flex-row items-center justify-between gap-y-6 text-[12px] leading-[15px] font-normal text-[#000000] font-['Inter',sans-serif]"
+          style={{ fontFamily: "var(--font-inter), 'Inter', sans-serif" }}
+        >
+          <p className="order-2 md:order-1 select-none text-[#000000]">
             © 2026 Politiklar
           </p>
 
@@ -30,7 +33,7 @@ export default function Footer() {
               <Link
                 key={link.label}
                 href={link.href}
-                className="text-[#000000] hover:opacity-70 transition-opacity"
+                className="text-[#000000] hover:opacity-70 transition-opacity focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-black rounded"
               >
                 {link.label}
               </Link>
