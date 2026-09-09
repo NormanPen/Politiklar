@@ -29,7 +29,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang="de" className={`${geistSans.variable} ${geistMono.variable} ${inter.variable}`} suppressHydrationWarning>
       <body className="min-h-screen bg-gray-50 text-gray-900 flex flex-col antialiased" suppressHydrationWarning>
         <Header />
-        <main className="flex-1">{children}</main>
+        <main className="flex-1 pt-[48px]">{children}</main>
         <Footer />
       </body>
     </html>

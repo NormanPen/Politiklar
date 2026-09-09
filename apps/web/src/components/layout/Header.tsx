@@ -16,7 +16,7 @@ export default function Header() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   return (
-    <header className="sticky top-0 z-50 w-full bg-[#FFFFFF] border-b border-gray-100 transition-colors">
+    <header className="fixed top-0 left-0 right-0 z-50 w-full h-[48px] bg-white/80 backdrop-blur-md border-b border-black/[0.06] transition-colors">
       <div className="relative max-w-[1024px] mx-auto h-[48px] px-4 sm:px-6 flex items-center justify-between">
         {/* Logo (Left: 232px in 1440px frame, align to 1024px container left padding) */}
         <div className="flex-shrink-0 flex items-center">
