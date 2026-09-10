@@ -1,1 +1,13 @@
 @import "tailwindcss";
+
+@theme {
+  /* Politiklar Markenfarben */
+  --color-brand-cyan: #82D4D9;
+  --color-brand-cyan-light: #A0E9ED;
+  --color-brand-navy: #0F2537;
+
+  /* Semantische Tokens */
+  --color-cta: #A0E9ED;
+  --color-cta-hover: #82D4D9;
+  --color-cta-border: #71C7CC;
+}
