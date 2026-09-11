@@ -8,7 +8,7 @@ export default function Home() {
       <div className="max-w-4xl mx-auto px-6 py-16 space-y-8 text-center">
         <div className="space-y-4">
           <h2 className="text-3xl sm:text-4xl font-extrabold text-gray-900 tracking-tight">
-            Willkommen bei <span className="text-indigo-600">Politiklar</span>
+            Willkommen bei <span className="text-[#A0E9ED]">Politiklar</span>
           </h2>
           <p className="text-lg text-gray-600 max-w-2xl mx-auto">
             Civic-Tech-Plattform für transparente und lückenlos nachvollziehbare Informationen aus offiziellen politischen Primärquellen des Deutschen Bundestages.
