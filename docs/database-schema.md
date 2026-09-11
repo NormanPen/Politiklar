@@ -138,6 +138,55 @@ erDiagram
 
 `named_vote_rows.outcome` ist auf `yes`, `no`, `abstained`, `invalid`, `not_voted` und `unknown` beschraenkt. Stimmen- und Redereihen werden vollstaendig mit ihren amtlichen Namen beziehungsweise Sprecher-IDs gespeichert, aber nur bei verifizierter ID-Zuordnung mit einem Abgeordneten verknuepft.
 
+## Benutzer & Authentifizierung
+
+```mermaid
+erDiagram
+    USERS ||--o{ USER_ACCOUNTS : besitzt
+    USERS ||--o{ USER_API_KEYS : besitzt
+    USERS ||--o{ USER_FAVORITES : besitzt
+
+    USERS {
+        uuid id PK
+        string email UK
+        datetime email_verified
+        string name
+        text avatar_url
+        string hashed_password
+        string role
+        boolean is_active
+        datetime created_at
+        datetime updated_at
+    }
+    USER_ACCOUNTS {
+        uuid id PK
+        uuid user_id FK
+        string provider
+        string provider_account_id
+        datetime created_at
+    }
+    USER_API_KEYS {
+        uuid id PK
+        uuid user_id FK
+        string name
+        string key_hash UK
+        string key_prefix
+        boolean is_active
+        datetime last_used_at
+        datetime expires_at
+        datetime created_at
+    }
+    USER_FAVORITES {
+        uuid id PK
+        uuid user_id FK
+        string entity_type
+        uuid entity_id
+        datetime created_at
+    }
+```
+
+`users` speichert registrierte Benutzerdaten mit Rollenpruefung (`user`, `admin`). OAuth-Verknuepfungen (wie Google oder kuenftig Microsoft) werden in `user_accounts` getrennt gefuehrt. `user_api_keys` verwaltet gehashte Tokens fuer externe API- und MCP-Server-Zugriffe. `user_favorites` dient zum Speichern von Merklisten (z. B. favorisierte Abgeordnete oder beobachtete Dossiers).
+
 ## Tabellenuebersicht
 
 | Tabelle | Zweck |
@@ -158,5 +207,9 @@ erDiagram
 | `named_votes` | Amtliche namentliche Abstimmungen |
 | `named_vote_rows` | Amtliche Ergebniszeilen je Abstimmung |
 | `parliamentary_speeches` | Amtliche Reden aus Plenarprotokollen |
+| `users` | Benutzerkonten mit Rollen und Aktivitaetsstatus |
+| `user_accounts` | OAuth-Identitaeten (Google, Microsoft, etc.) je Benutzer |
+| `user_api_keys` | Gehashte Authentifizierungstokens fuer API & MCP-Server |
+| `user_favorites` | Benutzer-Merklisten fuer Abgeordnete, Gesetze und Dossiers |
 
 Zurueck zur [Dokumentationsuebersicht](README.md).

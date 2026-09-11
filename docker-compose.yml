@@ -29,6 +29,7 @@ services:
       DATABASE_URL: ${DATABASE_URL:?Set DATABASE_URL in the selected environment file}
       CRAWLER_SOURCE_ARCHIVE_PATH: ${CRAWLER_SOURCE_ARCHIVE_PATH:-/var/lib/politiklar/source-archive}
       API_CORS_ORIGINS: ${API_CORS_ORIGINS:-http://localhost:3000}
+      AUTH_SECRET: ${AUTH_SECRET:-}
     volumes:
       - source_archive:/var/lib/politiklar/source-archive
     healthcheck:
@@ -52,6 +53,12 @@ services:
       HOSTNAME: "0.0.0.0"
       INTERNAL_API_URL: http://api:8000
       NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://localhost:8000}
+      AUTH_SECRET: ${AUTH_SECRET:-}
+      AUTH_URL: ${AUTH_URL:-http://localhost:3000}
+      NEXTAUTH_URL: ${NEXTAUTH_URL:-http://localhost:3000}
+      AUTH_TRUST_HOST: ${AUTH_TRUST_HOST:-true}
+      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-}
+      GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET:-}
     healthcheck:
       test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:3000 || exit 1"]
       interval: 10s

@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
+import UserMenu from "@/components/auth/UserMenu";
 
 const navItems = [
   { label: "Dossier", href: "/dossier" },
@@ -86,43 +87,8 @@ export default function Header() {
             </svg>
           </Link>
 
-          {/* Profile / Account Icon */}
-          <Link
-            href="#"
-            className="p-1 text-black hover:opacity-60 transition-opacity focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-black rounded"
-            aria-label="Benutzerkonto"
-          >
-            <svg
-              width="16"
-              height="16"
-              viewBox="0 0 16 16"
-              fill="none"
-              xmlns="http://www.w3.org/2000/svg"
-              className="w-4 h-4 text-black block"
-              aria-hidden="true"
-            >
-              <circle
-                cx="8"
-                cy="8"
-                r="7"
-                stroke="currentColor"
-                strokeWidth="1.2"
-              />
-              <circle
-                cx="8"
-                cy="6.2"
-                r="2.2"
-                stroke="currentColor"
-                strokeWidth="1.2"
-              />
-              <path
-                d="M3.7 12.7C4.5 10.5 6.1 9.4 8 9.4C9.9 9.4 11.5 10.5 12.3 12.7"
-                stroke="currentColor"
-                strokeWidth="1.2"
-                strokeLinecap="round"
-              />
-            </svg>
-          </Link>
+          {/* Profile / Account Menu */}
+          <UserMenu />
 
           {/* Mobile Menu Toggle Button (visible only on small screens) */}
           <button

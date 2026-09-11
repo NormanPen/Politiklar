@@ -9,6 +9,7 @@ services:
     environment:
       DATABASE_URL: postgresql+psycopg://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}
       CRAWLER_SOURCE_ARCHIVE_PATH: /var/lib/politiklar/source-archive
+      AUTH_SECRET: ${AUTH_SECRET}
     volumes:
       - ./apps/backend/src:/app/src
       - ./var/source-archive:/var/lib/politiklar/source-archive
@@ -25,6 +26,12 @@ services:
       WATCHPACK_POLLING: "true"
       INTERNAL_API_URL: http://api:8000
       NEXT_PUBLIC_API_URL: http://localhost:${PORT:-8000}
+      AUTH_SECRET: ${AUTH_SECRET}
+      AUTH_URL: ${AUTH_URL:-http://localhost:3000}
+      NEXTAUTH_URL: ${NEXTAUTH_URL:-http://localhost:3000}
+      AUTH_TRUST_HOST: ${AUTH_TRUST_HOST:-true}
+      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID}
+      GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET}
     volumes:
       - ./apps/web:/app
       - /app/node_modules

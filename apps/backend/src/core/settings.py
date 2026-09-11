@@ -22,6 +22,7 @@ class Settings(BaseSettings):
     api_title: str = "Politiklar API"
     api_version: str = "0.1.0"
     api_cors_origins: str = "http://localhost:3000,http://127.0.0.1:3000"
+    auth_secret: str = ""
 
     @property
     def cors_origins_list(self) -> list[str]:
