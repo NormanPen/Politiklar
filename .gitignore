@@ -6,6 +6,9 @@ apps/backend/.venv/
 __pycache__/
 *.py[cod]
 var/source-archive/
+var/dumps/
+*.dump
+*.sql
 !.env.example
 !.env.development.example
 !.env.production.example

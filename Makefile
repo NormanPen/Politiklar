@@ -1,7 +1,9 @@
-.PHONY: help up down ps logs crawler-install crawler-fetch member-import vote-import speeches-import speaker-verify bundestag-import bundestag-refresh db db-down db-logs db-ps db-shell db-migrate db-migrate-down db-prod db-prod-down api-dev api-serve docker-build api-docker api-docker-down api-docker-logs crawler-docker web-build web-docker web-docker-down web-docker-logs web-docker-shell web-sync-deps
+.PHONY: help up down ps logs crawler-install crawler-fetch member-import vote-import speeches-import speaker-verify bundestag-import bundestag-refresh db db-down db-logs db-ps db-shell db-dump db-restore db-migrate db-migrate-down db-prod db-prod-down api-dev api-serve docker-build api-docker api-docker-down api-docker-logs crawler-docker web-build web-docker web-docker-down web-docker-logs web-docker-shell web-sync-deps
 
 COMPOSE_DEV = docker compose --env-file .env.development -f docker-compose.yml -f docker-compose.dev.yml
 COMPOSE_PROD = docker compose --env-file .env.production -f docker-compose.yml
+DUMP_FILE ?= var/dumps/politiklar_backup.dump
+FILE ?= $(DUMP_FILE)
 
 help:
 	@printf '%s\n' \
@@ -16,6 +18,8 @@ help:
 		'  db-down            Stop local PostgreSQL' \
 		'  db-ps              Show local PostgreSQL status' \
 		'  db-shell           Open a local PostgreSQL shell' \
+		'  db-dump [FILE=]    Export database dump (default: var/dumps/politiklar_backup.dump)' \
+		'  db-restore [FILE=] Restore database dump (default: var/dumps/politiklar_backup.dump)' \
 		'  db-migrate         Apply database migrations' \
 		'  db-migrate-down    Roll back the latest migration' \
 		'  db-prod            Start PostgreSQL with production settings' \
@@ -32,7 +36,6 @@ help:
 		'  web-docker-shell   Open a shell in Web container' \
 		'  web-sync-deps      Sync node_modules from Web container to host (for IDE)' \
 		'  crawler-docker CMD= Run crawler command in Docker container' \
-
 		'' \
 		'API:' \
 		'  api-dev            Start local development API server with auto-reload' \
@@ -111,6 +114,28 @@ db-ps:
 
 db-shell:
 	$(COMPOSE_DEV) exec postgres sh -c 'psql -U "$$POSTGRES_USER" -d "$$POSTGRES_DB"'
+
+db-dump:
+	@$(COMPOSE_DEV) ps --status running -q postgres | grep -q . || { echo "Fehler: PostgreSQL läuft nicht. Bitte zuerst 'make db' ausführen."; exit 1; }
+	@mkdir -p $$(dirname "$(FILE)")
+	@echo "Erstelle Datenbank-Dump in $(FILE)..."
+	@if echo "$(FILE)" | grep -q '\.sql$$'; then \
+		$(COMPOSE_DEV) exec -T postgres sh -c 'pg_dump -U "$$POSTGRES_USER" -d "$$POSTGRES_DB" --clean --if-exists --no-owner --no-privileges' > "$(FILE)"; \
+	else \
+		$(COMPOSE_DEV) exec -T postgres sh -c 'pg_dump -U "$$POSTGRES_USER" -d "$$POSTGRES_DB" -Fc --no-owner --no-privileges' > "$(FILE)"; \
+	fi
+	@echo "Dump erfolgreich erstellt: $(FILE) ($$(du -h "$(FILE)" | cut -f1))"
+
+db-restore:
+	@test -f "$(FILE)" || { echo "Fehler: Dump-Datei '$(FILE)' existiert nicht!"; exit 1; }
+	@$(COMPOSE_DEV) ps --status running -q postgres | grep -q . || { echo "Fehler: PostgreSQL läuft nicht. Bitte zuerst 'make db' ausführen."; exit 1; }
+	@echo "Stelle Datenbank aus $(FILE) wieder her..."
+	@if head -c 5 "$(FILE)" | grep -q 'PGDMP'; then \
+		$(COMPOSE_DEV) exec -T postgres sh -c 'pg_restore -U "$$POSTGRES_USER" -d "$$POSTGRES_DB" --clean --if-exists --no-owner --no-privileges' < "$(FILE)"; \
+	else \
+		$(COMPOSE_DEV) exec -T postgres sh -c 'psql -v ON_ERROR_STOP=1 -U "$$POSTGRES_USER" -d "$$POSTGRES_DB"' < "$(FILE)"; \
+	fi
+	@echo "Datenbank erfolgreich wiederhergestellt aus $(FILE)."
 
 db-prod:
 	$(COMPOSE_PROD) up -d postgres
