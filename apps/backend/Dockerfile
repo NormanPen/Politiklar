@@ -17,11 +17,12 @@ RUN pip install --upgrade pip
 
 # Copy source code, migrations and alembic configuration
 COPY src/ ./src
+COPY tests/ ./tests
 COPY migrations/ ./migrations
 COPY alembic.ini .
 
 # Install package and CLI entry points (politiklar-api, politiklar-crawl)
-RUN pip install -e .
+RUN pip install -e '.[dev]'
 
 # Prepare persistent source archive location
 RUN mkdir -p /var/lib/politiklar/source-archive

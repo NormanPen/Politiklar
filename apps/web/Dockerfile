@@ -7,7 +7,7 @@ WORKDIR /app
 # Stage 1: Install dependencies
 FROM base AS deps
 WORKDIR /app
-COPY package.json package-lock.json* ./
+COPY package.json package-lock.json* .npmrc* ./
 RUN npm ci
 
 # Stage 2: Development stage for live containerized development
@@ -15,6 +15,7 @@ FROM base AS dev
 WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
+RUN npx prisma generate
 ENV NODE_ENV=development \
     PORT=3000 \
     HOSTNAME="0.0.0.0"
@@ -30,7 +31,7 @@ COPY . .
 ENV NEXT_TELEMETRY_DISABLED=1 \
     NODE_ENV=production
 
-RUN npm run build
+RUN npx prisma generate && npm run build
 
 # Stage 4: Production runner stage
 FROM base AS runner

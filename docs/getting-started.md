@@ -2,20 +2,28 @@
 
 ## Voraussetzungen
 
-- Docker mit Docker Compose
-- Python 3.11 oder neuer
-- GNU Make
+- **Docker** mit Docker Compose
+- *(Optional)* **GNU Make** (falls nicht vorhanden, kann direkt `./setup.sh` verwendet werden)
+- *(Optional)* Python 3.11+ / Node 20+, falls man ohne Docker direkt auf dem Host entwickeln möchte.
 
-## Entwicklungsumgebung
+## Schnellstart (Entwicklungsumgebung)
+
+Dank vollständiger Containerisierung reicht ein einziger Befehl:
 
 ```bash
+# 1. Konfiguration bereitstellen
 cp .env.development.example .env.development
-make db
-make crawler-install
-make db-migrate
+
+# 2. Setup ausführen (startet Postgres, stellt Backup her falls vorhanden, baut & startet API & Web)
+make setup-dev
+# oder ohne make:
+./setup.sh dev
 ```
 
 Die lokale PostgreSQL-Datenbank ist unter `127.0.0.1:5432` erreichbar. `make db-shell` startet `psql`; `make db-ps` zeigt den Dienststatus.
+Das Web-Frontend läuft unter `http://localhost:3000`, die API unter `http://localhost:8000`.
+
+Für die Produktionsumgebung steht analog `make setup-prod` (bzw. `./setup.sh prod`) zur Verfügung.
 
 `postgres_data` ist ein benanntes Docker-Volume. Daten bleiben bei `docker compose stop`, `docker compose down` und Container-Neuerstellung erhalten. `docker compose down -v` entfernt das Volume und damit die Daten.
 

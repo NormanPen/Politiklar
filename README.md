@@ -2,14 +2,21 @@
 
 Politiklar ist eine Civic-Tech-Plattform fuer nachvollziehbare Informationen aus offiziellen deutschen politischen Quellen. Der aktuelle Entwicklungsstand konzentriert sich auf den Deutschen Bundestag, nachvollziehbare Quellenprovenienz und eine relationale PostgreSQL-Datenbasis.
 
-## Einstieg
+## Schnellstart (Zero-Host-Dependencies)
+
+Voraussetzung: Nur **Docker** (und optional `make`). Keine Installation von Python, Node oder PostgreSQL auf dem Host nötig!
 
 ```bash
+# 1. Konfiguration anlegen (oder vorhandene .env einfügen)
 cp .env.development.example .env.development
-make db
-make crawler-install
-make db-migrate
-make help
+
+# 2. Optional: Datenbank-Backup einfügen unter
+# var/dumps/politiklar_backup.dump
+
+# 3. Setup starten (startet DB, stellt Backup wieder her oder migriert, baut & startet API + Web)
+make setup-dev
+# oder falls make noch nicht installiert ist:
+./setup.sh dev
 ```
 
 ## Dokumentation
