@@ -1,5 +1,8 @@
 import NextAuth from "next-auth";
 import Google from "next-auth/providers/google";
+import Credentials from "next-auth/providers/credentials";
+import bcrypt from "bcrypt";
+import { db } from "@/lib/db";
 
 const backendUrl = process.env.INTERNAL_API_URL || process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
 
@@ -8,7 +11,46 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
     Google({
       clientId: process.env.GOOGLE_CLIENT_ID,
       clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-      checks: ["state"],
+    }),
+    Credentials({
+      name: "E-Mail & Passwort",
+      credentials: {
+        email: { label: "E-Mail", type: "email" },
+        password: { label: "Passwort", type: "password" },
+      },
+      async authorize(credentials) {
+        if (!credentials?.email || !credentials?.password) {
+          throw new Error("Bitte gib E-Mail-Adresse und Passwort ein.");
+        }
+
+        const email = (credentials.email as string).toLowerCase().trim();
+        const password = credentials.password as string;
+
+        const user = await db.user.findUnique({
+          where: { email },
+        });
+
+        if (!user || !user.hashedPassword) {
+          throw new Error("E-Mail-Adresse oder Passwort ist nicht korrekt.");
+        }
+
+        if (!user.isActive) {
+          throw new Error("Dein Account ist noch nicht aktiviert. Bitte bestätige zuerst deine E-Mail-Adresse über den Link in deiner Bestätigungsmail.");
+        }
+
+        const isValid = await bcrypt.compare(password, user.hashedPassword);
+        if (!isValid) {
+          throw new Error("E-Mail-Adresse oder Passwort ist nicht korrekt.");
+        }
+
+        return {
+          id: user.id,
+          email: user.email,
+          name: user.name,
+          role: user.role,
+          image: user.avatarUrl,
+        };
+      },
     }),
   ],
   secret: process.env.AUTH_SECRET || "e97c11f7cbb1a8e1df388e2c3427be51543b5e408892bb66ea9d46fbe87b003a",

@@ -19,6 +19,8 @@ interface FavoriteItem {
   created_at: string;
 }
 
+import { registerUser } from "@/app/actions/register";
+
 export default function AccountPage() {
   const { data: session, status } = useSession();
   const [apiKeys, setApiKeys] = useState<ApiKeyItem[]>([]);
@@ -27,6 +29,22 @@ export default function AccountPage() {
   const [createdRawKey, setCreatedRawKey] = useState<string | null>(null);
   const [isLoadingKeys, setIsLoadingKeys] = useState(false);
   const [keyError, setKeyError] = useState<string | null>(null);
+
+  // Auth UI state (Login & Registration)
+  const [authMode, setAuthMode] = useState<"login" | "register">("login");
+  const [loginEmail, setLoginEmail] = useState("");
+  const [loginPassword, setLoginPassword] = useState("");
+  const [loginError, setLoginError] = useState<string | null>(null);
+  const [isLoginPending, setIsLoginPending] = useState(false);
+
+  const [regName, setRegName] = useState("");
+  const [regEmail, setRegEmail] = useState("");
+  const [regPassword, setRegPassword] = useState("");
+  const [regError, setRegError] = useState<string | null>(null);
+  const [regSuccess, setRegSuccess] = useState<string | null>(null);
+  const [isRegPending, setIsRegPending] = useState(false);
+
+  const [isGoogleLoading, setIsGoogleLoading] = useState(false);
 
   const userId = session?.user?.id;
   const user = session?.user;
@@ -55,6 +73,54 @@ export default function AccountPage() {
       setIsLoadingKeys(false);
     }
   }, [userId, apiUrl]);
+
+  async function handleCredentialsLogin(e: React.FormEvent) {
+    e.preventDefault();
+    setLoginError(null);
+    setIsLoginPending(true);
+    try {
+      const res = await signIn("credentials", {
+        email: loginEmail.trim(),
+        password: loginPassword,
+        redirect: false,
+      });
+
+      if (res?.error) {
+        setLoginError("E-Mail oder Passwort nicht korrekt oder E-Mail noch nicht bestätigt.");
+      } else {
+        window.location.reload();
+      }
+    } catch {
+      setLoginError("Fehler bei der Anmeldung. Bitte überprüfe deine Angaben.");
+    } finally {
+      setIsLoginPending(false);
+    }
+  }
+
+  async function handleRegister(e: React.FormEvent) {
+    e.preventDefault();
+    setRegError(null);
+    setRegSuccess(null);
+    setIsRegPending(true);
+    try {
+      const formData = new FormData();
+      formData.set("name", regName.trim());
+      formData.set("email", regEmail.trim());
+      formData.set("password", regPassword);
+
+      const res = await registerUser(null, formData);
+      if (!res.success) {
+        setRegError(res.error || "Registrierung fehlgeschlagen.");
+      } else {
+        setRegSuccess(res.message || "Bestätigungs-E-Mail gesendet! Bitte überprüfe dein Postfach.");
+        setRegPassword("");
+      }
+    } catch {
+      setRegError("Ein unerwarteter Fehler ist aufgetreten. Bitte versuche es später erneut.");
+    } finally {
+      setIsRegPending(false);
+    }
+  }
 
   useEffect(() => {
     if (userId) {
@@ -96,32 +162,228 @@ export default function AccountPage() {
 
   if (!session || !user) {
     return (
-      <div className="max-w-md mx-auto my-16 p-8 bg-white border border-gray-200 rounded-2xl shadow-sm text-center">
-        <div className="w-12 h-12 rounded-full bg-blue-50 text-blue-600 mx-auto mb-4 flex items-center justify-center">
-          <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.75} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-          </svg>
+      <div className="max-w-md mx-auto my-16 p-8 bg-white border border-gray-200 rounded-2xl shadow-sm">
+        {/* Tabs: Anmelden vs. Registrieren */}
+        <div className="flex border-b border-gray-200 mb-6">
+          <button
+            type="button"
+            onClick={() => {
+              setAuthMode("login");
+              setLoginError(null);
+            }}
+            className={`flex-1 pb-3 text-sm font-semibold transition-colors border-b-2 ${
+              authMode === "login"
+                ? "border-sky-600 text-sky-600"
+                : "border-transparent text-gray-500 hover:text-gray-700"
+            }`}
+          >
+            Anmelden
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              setAuthMode("register");
+              setRegError(null);
+              setRegSuccess(null);
+            }}
+            className={`flex-1 pb-3 text-sm font-semibold transition-colors border-b-2 ${
+              authMode === "register"
+                ? "border-sky-600 text-sky-600"
+                : "border-transparent text-gray-500 hover:text-gray-700"
+            }`}
+          >
+            Konto erstellen
+          </button>
         </div>
-        <h1 className="text-xl font-bold text-gray-900 mb-2">Anmeldung erforderlich</h1>
-        <p className="text-xs text-gray-600 mb-6 leading-relaxed">
-          Um dein Profil, Favoriten und API-/MCP-Schlüssel zu verwalten, melde dich bitte an.
-        </p>
-        <button
-          type="button"
-          onClick={() => signIn("google")}
-          className="w-full inline-flex items-center justify-center gap-3 px-4 py-2.5 bg-white border border-gray-300 rounded-xl hover:bg-gray-50 text-sm font-medium text-gray-700 shadow-sm transition"
-        >
-          <svg className="w-4 h-4" viewBox="0 0 24 24">
-            <path fill="#4285F4" d="M23.745 12.27c0-.7-.06-1.4-.19-2.07H12v4.51h6.6c-.29 1.52-1.14 2.82-2.4 3.68v3.05h3.88c2.27-2.09 3.66-5.17 3.66-9.17z" />
-            <path fill="#34A853" d="M12 24c3.24 0 5.95-1.08 7.93-2.91l-3.88-3.05c-1.08.72-2.45 1.16-4.05 1.16-3.12 0-5.77-2.1-6.72-4.93H1.25v3.15C3.26 21.36 7.33 24 12 24z" />
-            <path fill="#FBBC05" d="M5.28 14.27A7.16 7.16 0 0 1 4.9 12c0-.79.14-1.57.38-2.27V6.58H1.25A11.96 11.96 0 0 0 0 12c0 1.92.45 3.74 1.25 5.42l4.03-3.15z" />
-            <path fill="#EA4335" d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.42-3.42C17.95 1.19 15.24 0 12 0 7.33 0 3.26 2.64 1.25 6.58l4.03 3.15c.95-2.83 3.6-4.98 6.72-4.98z" />
-          </svg>
-          Mit Google anmelden
-        </button>
+
+        {authMode === "login" ? (
+          <div>
+            <div className="text-center mb-6">
+              <h1 className="text-xl font-bold text-gray-900 mb-1">Willkommen zurück</h1>
+              <p className="text-xs text-gray-500">
+                Melde dich mit deinem Konto an, um deine Favoriten und API-Schlüssel zu verwalten.
+              </p>
+            </div>
+
+            {loginError && (
+              <div className="mb-4 p-3 bg-rose-50 border border-rose-200 rounded-xl text-xs text-rose-700">
+                {loginError}
+              </div>
+            )}
+
+            <form onSubmit={handleCredentialsLogin} className="space-y-4">
+              <div>
+                <label className="block text-xs font-semibold text-gray-700 mb-1">
+                  E-Mail-Adresse
+                </label>
+                <input
+                  type="email"
+                  required
+                  value={loginEmail}
+                  onChange={(e) => setLoginEmail(e.target.value)}
+                  placeholder="name@beispiel.de"
+                  className="w-full px-3 py-2 text-sm border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-sky-500"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-gray-700 mb-1">
+                  Passwort
+                </label>
+                <input
+                  type="password"
+                  required
+                  value={loginPassword}
+                  onChange={(e) => setLoginPassword(e.target.value)}
+                  placeholder="••••••••"
+                  className="w-full px-3 py-2 text-sm border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-sky-500"
+                />
+              </div>
+
+              <button
+                type="submit"
+                disabled={isLoginPending}
+                className="w-full py-2.5 px-4 bg-sky-600 hover:bg-sky-500 disabled:opacity-50 text-white text-sm font-semibold rounded-xl shadow-sm transition"
+              >
+                {isLoginPending ? "Wird angemeldet..." : "Anmelden"}
+              </button>
+            </form>
+
+            <div className="relative my-6 text-center">
+              <div className="absolute inset-0 flex items-center">
+                <div className="w-full border-t border-gray-200" />
+              </div>
+              <span className="relative bg-white px-3 text-xs text-gray-400">
+                oder
+              </span>
+            </div>
+
+            <button
+              type="button"
+              disabled={isGoogleLoading}
+              onClick={async () => {
+                setIsGoogleLoading(true);
+                await signIn("google");
+              }}
+              className="w-full inline-flex items-center justify-center gap-3 px-4 py-2.5 bg-white border border-gray-300 rounded-xl hover:bg-gray-50 disabled:opacity-50 text-sm font-medium text-gray-700 shadow-sm transition"
+            >
+              <svg className="w-4 h-4" viewBox="0 0 24 24">
+                <path fill="#4285F4" d="M23.745 12.27c0-.7-.06-1.4-.19-2.07H12v4.51h6.6c-.29 1.52-1.14 2.82-2.4 3.68v3.05h3.88c2.27-2.09 3.66-5.17 3.66-9.17z" />
+                <path fill="#34A853" d="M12 24c3.24 0 5.95-1.08 7.93-2.91l-3.88-3.05c-1.08.72-2.45 1.16-4.05 1.16-3.12 0-5.77-2.1-6.72-4.93H1.25v3.15C3.26 21.36 7.33 24 12 24z" />
+                <path fill="#FBBC05" d="M5.28 14.27A7.16 7.16 0 0 1 4.9 12c0-.79.14-1.57.38-2.27V6.58H1.25A11.96 11.96 0 0 0 0 12c0 1.92.45 3.74 1.25 5.42l4.03-3.15z" />
+                <path fill="#EA4335" d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.42-3.42C17.95 1.19 15.24 0 12 0 7.33 0 3.26 2.64 1.25 6.58l4.03 3.15c.95-2.83 3.6-4.98 6.72-4.98z" />
+              </svg>
+              {isGoogleLoading ? "Weiterleitung..." : "Mit Google anmelden"}
+            </button>
+          </div>
+        ) : (
+          <div>
+            <div className="text-center mb-6">
+              <h1 className="text-xl font-bold text-gray-900 mb-1">Neues Konto erstellen</h1>
+              <p className="text-xs text-gray-500">
+                Registriere dich mit deiner E-Mail. Du erhältst anschließend einen Bestätigungslink per E-Mail.
+              </p>
+            </div>
+
+            {regError && (
+              <div className="mb-4 p-3 bg-rose-50 border border-rose-200 rounded-xl text-xs text-rose-700">
+                {regError}
+              </div>
+            )}
+
+            {regSuccess && (
+              <div className="mb-4 p-3 bg-emerald-50 border border-emerald-200 rounded-xl text-xs text-emerald-800 leading-relaxed">
+                <p className="font-semibold mb-1">✓ Fast geschafft!</p>
+                {regSuccess}
+              </div>
+            )}
+
+            {!regSuccess && (
+              <form onSubmit={handleRegister} className="space-y-4">
+                <div>
+                  <label className="block text-xs font-semibold text-gray-700 mb-1">
+                    Name <span className="text-gray-400 font-normal">(optional)</span>
+                  </label>
+                  <input
+                    type="text"
+                    value={regName}
+                    onChange={(e) => setRegName(e.target.value)}
+                    placeholder="Max Mustermann"
+                    className="w-full px-3 py-2 text-sm border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-sky-500"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-semibold text-gray-700 mb-1">
+                    E-Mail-Adresse
+                  </label>
+                  <input
+                    type="email"
+                    required
+                    value={regEmail}
+                    onChange={(e) => setRegEmail(e.target.value)}
+                    placeholder="name@beispiel.de"
+                    className="w-full px-3 py-2 text-sm border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-sky-500"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-semibold text-gray-700 mb-1">
+                    Passwort <span className="text-gray-400 font-normal">(mind. 8 Zeichen)</span>
+                  </label>
+                  <input
+                    type="password"
+                    required
+                    minLength={8}
+                    value={regPassword}
+                    onChange={(e) => setRegPassword(e.target.value)}
+                    placeholder="••••••••"
+                    className="w-full px-3 py-2 text-sm border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-sky-500"
+                  />
+                </div>
+
+                <button
+                  type="submit"
+                  disabled={isRegPending}
+                  className="w-full py-2.5 px-4 bg-sky-600 hover:bg-sky-500 disabled:opacity-50 text-white text-sm font-semibold rounded-xl shadow-sm transition"
+                >
+                  {isRegPending ? "Konto wird erstellt..." : "Registrieren (Double-Opt-In)"}
+                </button>
+              </form>
+            )}
+
+            <div className="relative my-6 text-center">
+              <div className="absolute inset-0 flex items-center">
+                <div className="w-full border-t border-gray-200" />
+              </div>
+              <span className="relative bg-white px-3 text-xs text-gray-400">
+                oder
+              </span>
+            </div>
+
+            <button
+              type="button"
+              disabled={isGoogleLoading}
+              onClick={async () => {
+                setIsGoogleLoading(true);
+                await signIn("google");
+              }}
+              className="w-full inline-flex items-center justify-center gap-3 px-4 py-2.5 bg-white border border-gray-300 rounded-xl hover:bg-gray-50 disabled:opacity-50 text-sm font-medium text-gray-700 shadow-sm transition"
+            >
+              <svg className="w-4 h-4" viewBox="0 0 24 24">
+                <path fill="#4285F4" d="M23.745 12.27c0-.7-.06-1.4-.19-2.07H12v4.51h6.6c-.29 1.52-1.14 2.82-2.4 3.68v3.05h3.88c2.27-2.09 3.66-5.17 3.66-9.17z" />
+                <path fill="#34A853" d="M12 24c3.24 0 5.95-1.08 7.93-2.91l-3.88-3.05c-1.08.72-2.45 1.16-4.05 1.16-3.12 0-5.77-2.1-6.72-4.93H1.25v3.15C3.26 21.36 7.33 24 12 24z" />
+                <path fill="#FBBC05" d="M5.28 14.27A7.16 7.16 0 0 1 4.9 12c0-.79.14-1.57.38-2.27V6.58H1.25A11.96 11.96 0 0 0 0 12c0 1.92.45 3.74 1.25 5.42l4.03-3.15z" />
+                <path fill="#EA4335" d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.42-3.42C17.95 1.19 15.24 0 12 0 7.33 0 3.26 2.64 1.25 6.58l4.03 3.15c.95-2.83 3.6-4.98 6.72-4.98z" />
+              </svg>
+              {isGoogleLoading ? "Weiterleitung..." : "Mit Google anmelden"}
+            </button>
+          </div>
+        )}
       </div>
     );
   }
+
 
   return (
     <div className="max-w-4xl mx-auto px-4 sm:px-6 py-10 space-y-8">

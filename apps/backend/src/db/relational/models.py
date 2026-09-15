@@ -331,3 +331,16 @@ class UserFavorite(Base):
     entity_type: Mapped[str] = mapped_column(String(50))
     entity_id: Mapped[UUID] = mapped_column(PG_UUID(as_uuid=True))
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+
+class VerificationToken(Base):
+    __tablename__ = "verification_tokens"
+    __table_args__ = (
+        UniqueConstraint("token", name="uq_verification_token"),
+    )
+
+    id: Mapped[UUID] = mapped_column(PG_UUID(as_uuid=True), primary_key=True, default=uuid4)
+    token: Mapped[str] = mapped_column(String(255), unique=True, index=True)
+    user_id: Mapped[UUID] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), index=True)
+    expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())

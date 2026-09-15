@@ -145,6 +145,7 @@ erDiagram
     USERS ||--o{ USER_ACCOUNTS : besitzt
     USERS ||--o{ USER_API_KEYS : besitzt
     USERS ||--o{ USER_FAVORITES : besitzt
+    USERS ||--o{ VERIFICATION_TOKENS : besitzt
 
     USERS {
         uuid id PK
@@ -157,6 +158,13 @@ erDiagram
         boolean is_active
         datetime created_at
         datetime updated_at
+    }
+    VERIFICATION_TOKENS {
+        uuid id PK
+        string token UK
+        uuid user_id FK
+        datetime expires_at
+        datetime created_at
     }
     USER_ACCOUNTS {
         uuid id PK
@@ -185,7 +193,7 @@ erDiagram
     }
 ```
 
-`users` speichert registrierte Benutzerdaten mit Rollenpruefung (`user`, `admin`). OAuth-Verknuepfungen (wie Google oder kuenftig Microsoft) werden in `user_accounts` getrennt gefuehrt. `user_api_keys` verwaltet gehashte Tokens fuer externe API- und MCP-Server-Zugriffe. `user_favorites` dient zum Speichern von Merklisten (z. B. favorisierte Abgeordnete oder beobachtete Dossiers).
+`users` speichert registrierte Benutzerdaten mit Rollenpruefung (`user`, `admin`). `verification_tokens` speichert kryptographische Einmal-Tokens fuer den Double-Opt-In-Registrierungs- und Verifizierungsprozess (Gueltigkeit: 24 Stunden). OAuth-Verknuepfungen (wie Google oder kuenftig Microsoft) werden in `user_accounts` getrennt gefuehrt. `user_api_keys` verwaltet gehashte Tokens fuer externe API- und MCP-Server-Zugriffe. `user_favorites` dient zum Speichern von Merklisten (z. B. favorisierte Abgeordnete oder beobachtete Dossiers).
 
 ## Tabellenuebersicht
 
@@ -208,6 +216,7 @@ erDiagram
 | `named_vote_rows` | Amtliche Ergebniszeilen je Abstimmung |
 | `parliamentary_speeches` | Amtliche Reden aus Plenarprotokollen |
 | `users` | Benutzerkonten mit Rollen und Aktivitaetsstatus |
+| `verification_tokens` | Double-Opt-In-Tokens fuer die E-Mail-Bestaetigung |
 | `user_accounts` | OAuth-Identitaeten (Google, Microsoft, etc.) je Benutzer |
 | `user_api_keys` | Gehashte Authentifizierungstokens fuer API & MCP-Server |
 | `user_favorites` | Benutzer-Merklisten fuer Abgeordnete, Gesetze und Dossiers |
