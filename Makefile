@@ -1,4 +1,4 @@
-.PHONY: help up down ps logs crawler-install crawler-fetch member-import vote-import speeches-import speaker-verify bundestag-import bundestag-refresh db db-down db-logs db-ps db-shell db-migrate db-migrate-down db-prod db-prod-down api-dev api-serve docker-build api-docker api-docker-down api-docker-logs crawler-docker web-build web-docker web-docker-down web-docker-logs web-docker-shell
+.PHONY: help up down ps logs crawler-install crawler-fetch member-import vote-import speeches-import speaker-verify bundestag-import bundestag-refresh db db-down db-logs db-ps db-shell db-migrate db-migrate-down db-prod db-prod-down api-dev api-serve docker-build api-docker api-docker-down api-docker-logs crawler-docker web-build web-docker web-docker-down web-docker-logs web-docker-shell web-sync-deps
 
 COMPOSE_DEV = docker compose --env-file .env.development -f docker-compose.yml -f docker-compose.dev.yml
 COMPOSE_PROD = docker compose --env-file .env.production -f docker-compose.yml
@@ -30,6 +30,7 @@ help:
 		'  web-docker-down    Stop Web container' \
 		'  web-docker-logs    Show Web container logs' \
 		'  web-docker-shell   Open a shell in Web container' \
+		'  web-sync-deps      Sync node_modules from Web container to host (for IDE)' \
 		'  crawler-docker CMD= Run crawler command in Docker container' \
 
 		'' \
@@ -149,6 +150,9 @@ web-docker-logs:
 
 web-docker-shell:
 	$(COMPOSE_DEV) exec web sh
+
+web-sync-deps:
+	docker cp politiklar-web:/app/node_modules/. apps/web/node_modules/
 
 crawler-docker:
 	@test -n "$(CMD)" || (echo "Usage: make crawler-docker CMD=\"import-all --help\"" && exit 1)
