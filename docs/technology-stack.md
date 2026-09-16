@@ -2,7 +2,7 @@
 
 | Bereich | Aktuell eingesetzt | Geplant oder vorbereitet |
 | --- | --- | --- |
-| Datenbank | PostgreSQL 17, SQLAlchemy, Alembic, psycopg | pgvector oder Qdrant fuer Embeddings |
+| Datenbank | PostgreSQL 17, pgvector, SQLAlchemy, Alembic, psycopg | Qdrant fuer verteilte Embeddings (optional) |
 | Crawler | Python, httpx, selectolax, openpyxl | Weitere amtliche Importer |
 | API | FastAPI, Uvicorn, Pydantic V2 | Erweiterte GraphQL/gRPC-Schnittstellen |
 | Konfiguration | Pydantic Settings, `.env`-Dateien | Docker Secrets fuer produktive Geheimnisse |

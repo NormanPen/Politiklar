@@ -11,6 +11,12 @@ make db-migrate-down
 
 Die Migrationen befinden sich unter [apps/backend/migrations/versions](../apps/backend/migrations/versions). Eine Rueckrollpruefung erfolgt immer nur fuer die zuletzt angewendete Revision.
 
+## Erweiterungen (Extensions)
+
+| Extension | Zweck |
+| --- | --- |
+| `vector` (`pgvector`) | Native Vektorspeicherung und Cosine-/L2-Distanzberechnung (HNSW-Indizes) fuer evidenzbasierte RAG-Pipelines und Volltext-/Semantiksuche |
+
 ## Quellenfluss
 
 ```mermaid
