@@ -7,7 +7,7 @@ import { useSession, signOut } from "next-auth/react";
 import AuthModal from "./AuthModal";
 
 export default function UserMenu() {
-  const { data: session, status } = useSession();
+  const { data: session } = useSession();
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [modalOpen, setModalOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);

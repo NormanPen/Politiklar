@@ -24,7 +24,7 @@ export default function StateTest() {
       <div>
         <h1 className="text-2xl font-bold text-gray-900">State Management Demo</h1>
         <p className="text-sm text-gray-500 mt-1">
-          Wichtig: Diese Komponente nutzt ganz oben <code className="bg-gray-100 px-1 py-0.5 rounded text-pink-600 font-mono text-xs">"use client";</code>
+          Wichtig: Diese Komponente nutzt ganz oben <code className="bg-gray-100 px-1 py-0.5 rounded text-pink-600 font-mono text-xs">&quot;use client&quot;;</code>
         </p>
       </div>
 
