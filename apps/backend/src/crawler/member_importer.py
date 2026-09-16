@@ -1,11 +1,13 @@
 """Idempotent import of a single Bundestag biography page."""
 
+import logging
 from datetime import datetime
 from hashlib import sha256
 
 from sqlalchemy import select, update
 from sqlalchemy.orm import Session
 
+from core.settings import Settings
 from db.relational.models import (
     BundestagMember,
     MemberAffiliation,
@@ -20,11 +22,21 @@ from db.relational.models import (
 
 from .bundestag_biography import MemberBiography, parse_biography_page
 from .fetcher import FetchedDocument, fetch_document
+from .member_images import fetch_and_import_member_image
+
+logger = logging.getLogger(__name__)
 
 
-def import_biography(session: Session, url: str, electoral_term: int = 21) -> MemberBiography:
+def import_biography(
+    session: Session,
+    url: str,
+    electoral_term: int = 21,
+    settings: Settings | None = None,
+    with_image: bool = True,
+) -> MemberBiography:
     """Fetch, parse and persist one biography page without duplicate observations."""
-    document = fetch_document(url)
+    settings = settings or Settings()
+    document = fetch_document(url, settings)
     biography = parse_biography_page(document.content.decode("utf-8"), document.source.source_url)
     source = _get_or_create_source(session, url, document)
     member = session.scalar(select(BundestagMember).where(BundestagMember.mdb_id == biography.mdb_id))
@@ -40,6 +52,11 @@ def import_biography(session: Session, url: str, electoral_term: int = 21) -> Me
     _persist_mandates(session, member, source.id, biography, document.source.retrieved_at)
     _persist_external_profiles(session, member, source.id, biography, document.source.retrieved_at)
     _persist_affiliations(session, member, source.id, biography, document.source.retrieved_at)
+    if with_image:
+        try:
+            fetch_and_import_member_image(session, member, biography, settings)
+        except Exception as exc:
+            logger.warning("Failed to retrieve profile image for MdB %s: %s", biography.mdb_id, exc)
     session.commit()
     return biography
 

@@ -1,5 +1,5 @@
-.PHONY: help setup-dev setup-prod up down ps logs test crawler-install crawler-fetch member-import vote-import speeches-import speaker-verify bundestag-import bundestag-refresh db db-down db-logs db-ps db-shell db-dump db-dump-prod db-restore db-restore-prod db-migrate db-migrate-down db-migrate-prod db-migrate-down-prod db-prod db-prod-down api-dev api-serve docker-build api-docker api-docker-down api-docker-logs crawler-docker web-build web-docker web-docker-down web-docker-logs web-docker-shell web-sync-deps
-.PHONY: help setup-dev setup-prod deploy-prod up down ps logs test crawler-install crawler-fetch member-import vote-import speeches-import speaker-verify bundestag-import bundestag-refresh db db-down db-logs db-ps db-shell db-dump db-dump-prod db-restore db-restore-prod db-migrate db-migrate-down db-migrate-prod db-migrate-down-prod db-prod db-prod-down api-dev api-serve docker-build api-docker api-docker-down api-docker-logs crawler-docker web-build web-docker web-docker-down web-docker-logs web-docker-shell web-sync-deps
+.PHONY: help setup-dev setup-prod up down ps logs test crawler-install crawler-fetch member-import member-image member-images vote-import speeches-import speaker-verify bundestag-import bundestag-refresh db db-down db-logs db-ps db-shell db-dump db-dump-prod db-restore db-restore-prod db-migrate db-migrate-down db-migrate-prod db-migrate-down-prod db-prod db-prod-down api-dev api-serve docker-build api-docker api-docker-down api-docker-logs crawler-docker web-build web-docker web-docker-down web-docker-logs web-docker-shell web-sync-deps
+.PHONY: help setup-dev setup-prod deploy-prod up down ps logs test crawler-install crawler-fetch member-import member-image member-images vote-import speeches-import speaker-verify bundestag-import bundestag-refresh db db-down db-logs db-ps db-shell db-dump db-dump-prod db-restore db-restore-prod db-migrate db-migrate-down db-migrate-prod db-migrate-down-prod db-prod db-prod-down api-dev api-serve docker-build api-docker api-docker-down api-docker-logs crawler-docker web-build web-docker web-docker-down web-docker-logs web-docker-shell web-sync-deps
 
 COMPOSE_DEV = docker compose --env-file .env.development -f docker-compose.yml -f docker-compose.dev.yml
 COMPOSE_PROD = docker compose --env-file .env.production -f docker-compose.yml
@@ -58,11 +58,12 @@ help:
 		'  crawler-install    Create the virtual environment and install dependencies on host' \
 		'  crawler-fetch URL= Retrieve source metadata and archive the response' \
 		'  member-import URL= Import one official Bundestag biography' \
+		'  member-image URL=  Import/update Wikimedia portrait for one Bundestag biography' \
 		'  vote-import URL=   Import one official named-vote XLSX list' \
 		'  speeches-import URL= Import one official plenary-protocol XML file' \
 		'  speaker-verify MDB_ID= SPEAKER_ID= BIOGRAPHY_URL= PROTOCOL_URL= VERIFIED_BY= Verify and link a protocol speaker ID' \
-		'  bundestag-import [LIMIT=] [DRY_RUN=1] Import all current official Bundestag source families' \
-		'  bundestag-refresh [LIMIT=] [DRY_RUN=1] Refresh all current official Bundestag source families'
+		'  bundestag-import [LIMIT=] [FAMILY=members|votes|protocols] [DRY_RUN=1] Import official Bundestag source families' \
+		'  bundestag-refresh [LIMIT=] [FAMILY=members|votes|protocols] [DRY_RUN=1] Efficient incremental update (skips already imported unchanged sources)'
 
 setup-dev:
 	@echo "==> [Politiklar Setup-Dev] Prüfe .env.development..."
@@ -159,6 +160,7 @@ crawler-fetch:
 		$(COMPOSE_DEV) run --rm api politiklar-crawl fetch "$(URL)"; \
 	fi
 
+# Einzelnen Abgeordneten per Biografie-URL importieren (inkl. automatischem Wikimedia-Profilbildabruf)
 member-import:
 	@test -n "$(URL)" || (echo "Usage: make member-import URL=https://www.bundestag.de/abgeordnete/biografien/..." && exit 1)
 	@if [ -x apps/backend/.venv/bin/politiklar-crawl ]; then \
@@ -167,6 +169,24 @@ member-import:
 		$(COMPOSE_DEV) run --rm api politiklar-crawl import-biography "$(URL)"; \
 	fi
 
+# Gezielt das Profilbild für einen Abgeordneten über Wikidata & Wikimedia Commons nachladen/aktualisieren
+member-image:
+	@test -n "$(URL)" || (echo "Usage: make member-image URL=https://www.bundestag.de/abgeordnete/biografien/..." && exit 1)
+	@if [ -x apps/backend/.venv/bin/politiklar-crawl ]; then \
+		set -a && . ./.env.development && set +a && apps/backend/.venv/bin/politiklar-crawl import-member-image "$(URL)"; \
+	else \
+		$(COMPOSE_DEV) run --rm api politiklar-crawl import-member-image "$(URL)"; \
+	fi
+
+# Fehlende Profilbilder für bereits in der Datenbank gespeicherte Abgeordnete nachziehen (z. B. LIMIT=20)
+member-images:
+	@if [ -x apps/backend/.venv/bin/politiklar-crawl ]; then \
+		set -a && . ./.env.development && set +a && apps/backend/.venv/bin/politiklar-crawl sync-member-images $(if $(LIMIT),--limit $(LIMIT)); \
+	else \
+		$(COMPOSE_DEV) run --rm api politiklar-crawl sync-member-images $(if $(LIMIT),--limit $(LIMIT)); \
+	fi
+
+# Namentliche Abstimmung aus offizieller Excel-Tabelle (XLSX) importieren
 vote-import:
 	@test -n "$(URL)" || (echo "Usage: make vote-import URL=https://www.bundestag.de/resource/blob/...xlsx" && exit 1)
 	@if [ -x apps/backend/.venv/bin/politiklar-crawl ]; then \
@@ -175,6 +195,7 @@ vote-import:
 		$(COMPOSE_DEV) run --rm api politiklar-crawl import-named-vote "$(URL)"; \
 	fi
 
+# Plenarprotokoll (XML) mit allen Reden importieren
 speeches-import:
 	@test -n "$(URL)" || (echo "Usage: make speeches-import URL=https://www.bundestag.de/resource/blob/...xml" && exit 1)
 	@if [ -x apps/backend/.venv/bin/politiklar-crawl ]; then \
@@ -183,6 +204,7 @@ speeches-import:
 		$(COMPOSE_DEV) run --rm api politiklar-crawl import-protocol "$(URL)"; \
 	fi
 
+# Protokoll-Sprecher-ID anhand zweier Belege verbindlich mit einer MDB-ID verknüpfen
 speaker-verify:
 	@test -n "$(MDB_ID)" -a -n "$(SPEAKER_ID)" -a -n "$(BIOGRAPHY_URL)" -a -n "$(PROTOCOL_URL)" -a -n "$(VERIFIED_BY)" || (echo "Usage: make speaker-verify MDB_ID=... SPEAKER_ID=... BIOGRAPHY_URL=https://www.bundestag.de/... PROTOCOL_URL=https://www.bundestag.de/... VERIFIED_BY=name" && exit 1)
 	@if [ -x apps/backend/.venv/bin/politiklar-crawl ]; then \
@@ -191,18 +213,29 @@ speaker-verify:
 		$(COMPOSE_DEV) run --rm api politiklar-crawl verify-plenary-speaker --mdb-id "$(MDB_ID)" --speaker-id "$(SPEAKER_ID)" --biography-evidence-url "$(BIOGRAPHY_URL)" --protocol-evidence-url "$(PROTOCOL_URL)" --verified-by "$(VERIFIED_BY)"; \
 	fi
 
+# Vollständiger Import aller Quellen der aktuellen Wahlperiode
+# Optionen:
+#   LIMIT=10                      Maximale Anzahl Quellen pro Kategorie
+#   FAMILY=members|votes|protocols Auf eine Quellfamilie beschränken
+#   DRY_RUN=1                     Nur Quellen entdecken, ohne DB-Schreibzugriff
 bundestag-import:
 	@if [ -x apps/backend/.venv/bin/politiklar-crawl ]; then \
-		set -a && . ./.env.development && set +a && apps/backend/.venv/bin/politiklar-crawl import-all $(if $(LIMIT),--limit $(LIMIT)) $(if $(DRY_RUN),--dry-run); \
+		set -a && . ./.env.development && set +a && apps/backend/.venv/bin/politiklar-crawl import-all $(if $(LIMIT),--limit $(LIMIT)) $(if $(FAMILY),--family $(FAMILY)) $(if $(DRY_RUN),--dry-run); \
 	else \
-		$(COMPOSE_DEV) run --rm api politiklar-crawl import-all $(if $(LIMIT),--limit $(LIMIT)) $(if $(DRY_RUN),--dry-run); \
+		$(COMPOSE_DEV) run --rm api politiklar-crawl import-all $(if $(LIMIT),--limit $(LIMIT)) $(if $(FAMILY),--family $(FAMILY)) $(if $(DRY_RUN),--dry-run); \
 	fi
 
+# Inkrementelles Update: Überspringt bereits vorhandene Quellen sekundenschnell
+# und zieht nur neue Dokumente sowie fehlende Abgeordneten-Profilbilder nach.
+# Optionen:
+#   LIMIT=10                      Maximale Anzahl Quellen pro Kategorie
+#   FAMILY=members|votes|protocols Auf eine Quellfamilie beschränken
+#   DRY_RUN=1                     Nur Quellen entdecken, ohne DB-Schreibzugriff
 bundestag-refresh:
 	@if [ -x apps/backend/.venv/bin/politiklar-crawl ]; then \
-		set -a && . ./.env.development && set +a && apps/backend/.venv/bin/politiklar-crawl import-all --refresh $(if $(LIMIT),--limit $(LIMIT)) $(if $(DRY_RUN),--dry-run); \
+		set -a && . ./.env.development && set +a && apps/backend/.venv/bin/politiklar-crawl import-all --refresh $(if $(LIMIT),--limit $(LIMIT)) $(if $(FAMILY),--family $(FAMILY)) $(if $(DRY_RUN),--dry-run); \
 	else \
-		$(COMPOSE_DEV) run --rm api politiklar-crawl import-all --refresh $(if $(LIMIT),--limit $(LIMIT)) $(if $(DRY_RUN),--dry-run); \
+		$(COMPOSE_DEV) run --rm api politiklar-crawl import-all --refresh $(if $(LIMIT),--limit $(LIMIT)) $(if $(FAMILY),--family $(FAMILY)) $(if $(DRY_RUN),--dry-run); \
 	fi
 
 db-migrate:

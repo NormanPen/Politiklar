@@ -109,3 +109,77 @@ def test_discover_links_respects_limit(monkeypatch) -> None:
 
     assert discovered == ["https://www.bundestag.de/abgeordnete/biografien/A/person-1"]
     assert len(calls) == 1
+
+
+def test_run_bundestag_import_family_and_dry_run(monkeypatch, db_session) -> None:
+    from core.settings import Settings
+    from crawler.bundestag_import import run_bundestag_import
+
+    settings = Settings(crawler_requests_per_second=100.0)
+
+    monkeypatch.setattr(
+        "crawler.bundestag_import.discover_links",
+        lambda endpoint, fragment, s, limit=None: ["https://example.org/doc.xml"],
+    )
+
+    report = run_bundestag_import(
+        db_session,
+        settings,
+        dry_run=True,
+        family="protocols",
+    )
+
+    assert report.dry_run is True
+    assert report.discovered_protocols == 1
+    assert report.discovered_members == 0
+    assert report.discovered_votes == 0
+    assert report.imported_protocols == 0
+
+
+def test_run_bundestag_import_refresh_skips_existing_votes(monkeypatch, db_session) -> None:
+    from datetime import UTC, datetime
+    from uuid import uuid4
+    from core.settings import Settings
+    from crawler.bundestag_import import run_bundestag_import
+    from db.relational.models import SourceDocument
+
+    # Seed an existing source document for vote URL
+    vote_url = "https://www.bundestag.de/resource/blob/123/vote.xlsx"
+    doc = SourceDocument(
+        id=uuid4(),
+        publisher="Deutscher Bundestag",
+        requested_url=vote_url,
+        resolved_url=vote_url,
+        retrieved_at=datetime.now(UTC),
+        status_code=200,
+        content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        content_sha256="test-sha-vote-1",
+        retrieval_tool="PolitiklarCrawler/0.1",
+    )
+    db_session.add(doc)
+    db_session.commit()
+
+    settings = Settings(crawler_requests_per_second=100.0)
+
+    monkeypatch.setattr(
+        "crawler.bundestag_import.discover_links",
+        lambda endpoint, fragment, s, limit=None: [vote_url],
+    )
+
+    imported_calls = []
+    monkeypatch.setattr(
+        "crawler.bundestag_import.import_named_vote",
+        lambda session, url: imported_calls.append(url),
+    )
+
+    report = run_bundestag_import(
+        db_session,
+        settings,
+        refresh=True,
+        family="votes",
+    )
+
+    assert report.discovered_votes == 1
+    assert report.skipped_votes == 1
+    assert report.imported_votes == 0
+    assert len(imported_calls) == 0
