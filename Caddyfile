@@ -1,0 +1,34 @@
+(common_proxy) {
+	# Backend FastAPI routes
+	handle /api/v1/* {
+		reverse_proxy api:8000
+	}
+	handle /docs* {
+		reverse_proxy api:8000
+	}
+	handle /openapi.json {
+		reverse_proxy api:8000
+	}
+	handle /redoc* {
+		reverse_proxy api:8000
+	}
+	handle /healthz {
+		reverse_proxy api:8000
+	}
+
+	# Frontend Next.js routes (including NextAuth /api/auth/*)
+	handle {
+		reverse_proxy web:3000
+	}
+}
+
+# Direct HTTP access via IP and server hostname
+http://194.59.206.22, http://v2202609420289521818.ultrasrv.de, http://localhost, http://127.0.0.1 {
+	import common_proxy
+}
+
+# Production domain with automatic HTTPS
+politiklar.de, www.politiklar.de {
+	import common_proxy
+}
+

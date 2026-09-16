@@ -99,17 +99,20 @@ setup-prod:
 	@if [ -f "$(FILE)" ]; then \
 		echo "==> [Politiklar Setup-Prod] Backup-Datei '$(FILE)' gefunden. Stelle Datenbank wieder her..."; \
 		$(MAKE) db-restore-prod FILE="$(FILE)"; \
+		echo "==> [Politiklar Setup-Prod] Wende anschliessende Alembic-Migrationen an..."; \
+		$(MAKE) db-migrate-prod; \
 	else \
 		echo "==> [Politiklar Setup-Prod] Keine Backup-Datei unter '$(FILE)'. Wende Alembic-Migrationen an..."; \
 		$(MAKE) db-migrate-prod; \
 	fi
-	@echo "==> [Politiklar Setup-Prod] Baue und starte Produktions-Container (API & Web)..."
+	@echo "==> [Politiklar Setup-Prod] Baue und starte Produktions-Container (Postgres, API, Web, Proxy)..."
 	@$(COMPOSE_PROD) up -d --build
-	@printf '\n%s\n%s\n%s\n%s\n' \
+	@printf '\n%s\n%s\n%s\n%s\n%s\n%s\n' \
 		'==========================================================' \
 		'  Politiklar Produktionsumgebung ist einsatzbereit!' \
-		'  Web Frontend:  http://localhost:3000' \
-		'  Backend API:   http://localhost:8000' \
+		'  Web Frontend:  http://194.59.206.22 (oder https://politiklar.de)' \
+		'  Backend API:   http://194.59.206.22/api/v1' \
+		'  API Docs:      http://194.59.206.22/docs' \
 		'=========================================================='
 
 test:
@@ -244,7 +247,7 @@ db-restore:
 	@$(COMPOSE) ps --status running -q postgres | grep -q . || { echo "Fehler: PostgreSQL läuft nicht. Bitte zuerst 'make db' oder 'make db-prod' ausführen."; exit 1; }
 	@echo "Stelle Datenbank aus $(FILE) wieder her..."
 	@if head -c 5 "$(FILE)" | grep -q 'PGDMP'; then \
-		$(COMPOSE) exec -T postgres sh -c 'pg_restore -U "$$POSTGRES_USER" -d "$$POSTGRES_DB" --clean --if-exists --no-owner --no-privileges' < "$(FILE)"; \
+		$(COMPOSE) exec -T postgres sh -c 'pg_restore -U "$$POSTGRES_USER" -d "$$POSTGRES_DB" --clean --if-exists --no-owner --no-privileges || test $$? -le 1' < "$(FILE)"; \
 	else \
 		$(COMPOSE) exec -T postgres sh -c 'psql -v ON_ERROR_STOP=1 -U "$$POSTGRES_USER" -d "$$POSTGRES_DB"' < "$(FILE)"; \
 	fi

@@ -51,17 +51,18 @@ done
 if [ -f "$DUMP_FILE" ]; then
   echo "==> Backup-Datei '$DUMP_FILE' gefunden. Stelle Datenbank wieder her..."
   if head -c 5 "$DUMP_FILE" | grep -q 'PGDMP'; then
-    $COMPOSE exec -T postgres sh -c 'pg_restore -U "$POSTGRES_USER" -d "$POSTGRES_DB" --clean --if-exists --no-owner --no-privileges' < "$DUMP_FILE"
+    $COMPOSE exec -T postgres sh -c 'pg_restore -U "$POSTGRES_USER" -d "$POSTGRES_DB" --clean --if-exists --no-owner --no-privileges || test $$? -le 1' < "$DUMP_FILE"
   else
     $COMPOSE exec -T postgres sh -c 'psql -v ON_ERROR_STOP=1 -U "$POSTGRES_USER" -d "$POSTGRES_DB"' < "$DUMP_FILE"
   fi
-  echo "==> Datenbank erfolgreich wiederhergestellt."
+  echo "==> Datenbank erfolgreich wiederhergestellt. Wende anschliessende Alembic-Migrationen an..."
+  $COMPOSE run --rm api alembic upgrade head
 else
   echo "==> Keine Backup-Datei unter '$DUMP_FILE' gefunden. Führe Alembic-Migrationen aus..."
   $COMPOSE run --rm api alembic upgrade head
 fi
 
-echo "==> Baue und starte alle Dienste (API & Web)..."
+echo "==> Baue und starte alle Dienste (Postgres, API, Web, Proxy)..."
 $COMPOSE up -d --build
 
 if [ "$MODE" = "dev" ]; then
@@ -74,9 +75,13 @@ fi
 echo ""
 echo "=========================================================="
 echo "  Politiklar ($MODE) ist einsatzbereit!"
-echo "  Web Frontend:  http://localhost:3000"
-echo "  Backend API:   http://localhost:8000"
-if [ "$MODE" = "dev" ]; then
+if [ "$MODE" = "prod" ]; then
+  echo "  Web Frontend:  http://194.59.206.22 (oder https://politiklar.de)"
+  echo "  Backend API:   http://194.59.206.22/api/v1"
+  echo "  API Docs:      http://194.59.206.22/docs"
+else
+  echo "  Web Frontend:  http://localhost:3000"
+  echo "  Backend API:   http://localhost:8000"
   echo "  API Docs:      http://localhost:8000/docs"
 fi
 echo "=========================================================="
