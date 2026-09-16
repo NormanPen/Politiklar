@@ -80,10 +80,20 @@ def _get_with_retry(client: httpx.Client, url: str, settings: Settings) -> httpx
             response = client.get(url)
             response.raise_for_status()
             return response
-        except (httpx.NetworkError, httpx.TimeoutException, httpx.HTTPStatusError):
+        except (httpx.NetworkError, httpx.TimeoutException, httpx.HTTPStatusError) as exc:
             if attempt == settings.crawler_max_retries:
                 raise
-            sleep(1 / settings.crawler_requests_per_second * (2**attempt))
+            backoff = 1 / settings.crawler_requests_per_second * (2**attempt)
+            if isinstance(exc, httpx.HTTPStatusError) and exc.response.status_code == 429:
+                retry_after = exc.response.headers.get("retry-after")
+                if retry_after:
+                    try:
+                        backoff = max(float(retry_after), backoff)
+                    except ValueError:
+                        pass
+                else:
+                    backoff = max(2.0 * (2**attempt), backoff)
+            sleep(backoff)
     raise RuntimeError("Unreachable retry state.")
 
 

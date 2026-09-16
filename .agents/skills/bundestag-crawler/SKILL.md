@@ -46,9 +46,15 @@ make crawler-fetch URL=https://www.bundestag.de/
 ```
 
 ### 2. Abgeordnetenbiografie importieren
-Importiert Stammdaten, Büros, Mandate, Rollen und externe Profile:
+Importiert Stammdaten, Büros, Mandate, Rollen und externe Profile (inkl. automatischem Abruf des Commons-Profilbilds):
 ```bash
 make member-import URL=https://www.bundestag.de/abgeordnete/biografien/A/abdi_sanae-1043330
+```
+
+### 2b. Profilbild von Wikimedia Commons gezielt laden/aktualisieren
+Lädt das Porträtbild nach strikter MdB-ID-Verifikation (über P1713 oder P1186 in Wikidata) von Wikimedia Commons und prüft die Lizenzmetadaten:
+```bash
+make member-image URL=https://www.bundestag.de/abgeordnete/biografien/A/abdi_sanae-1043330
 ```
 
 ### 3. Namentliche Abstimmung importieren (Excel/XLSX)
@@ -80,11 +86,17 @@ Vor einem vollständigen Durchlauf empfiehlt sich ein begrenzter Trockenlauf (oh
 # Trockenlauf mit Limit:
 make bundestag-import DRY_RUN=1 LIMIT=5
 
-# Echter Vollimport:
+# Echter Vollimport aller Quellen:
 make bundestag-import
 
-# Inkrementeller Refresh (nur neue oder geänderte Quellen):
+# Inkrementeller Refresh (überspringt unveränderte Quellen, lädt neue & fehlende Bilder):
 make bundestag-refresh
+
+# Optional mit Limit oder Quellfamilie:
+make bundestag-refresh LIMIT=20
+make bundestag-refresh FAMILY=members   # Nur Abgeordnete & Profilbilder
+make bundestag-refresh FAMILY=votes     # Nur namentliche Abstimmungen
+make bundestag-refresh FAMILY=protocols # Nur Plenarprotokolle
 ```
 
 ---

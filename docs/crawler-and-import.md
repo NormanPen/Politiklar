@@ -9,20 +9,29 @@ make crawler-install
 make help
 ```
 
-## Vollimport und Refresh
+## Vollimport und inkrementeller Refresh
 
 ```bash
+# Vollständiger Import aller Quellen der aktuellen Wahlperiode:
 make bundestag-import
+
+# Inkrementelles Update: Überspringt bereits vorhandene Quellen sekundenschnell
+# und zieht nur neue Dokumente sowie fehlende Abgeordneten-Profilbilder nach:
 make bundestag-refresh
-```
 
-`bundestag-import` entdeckt und importiert alle aktuell verlinkten Bundestag-Biografien, namentlichen Abstimmungslisten und Plenarprotokolle der 21. Wahlperiode. `bundestag-refresh` verwendet denselben idempotenten Ablauf fuer neue oder veraenderte Quellen. Beide Befehle geben einen Bericht mit entdeckten, importierten und fehlgeschlagenen Quellen aus.
+# Optional mit Limit (z. B. für Tests oder begrenzte Durchläufe):
+make bundestag-refresh LIMIT=10
 
-Vor einem grossen Lauf prueft ein begrenzter Trockenlauf die Discovery ohne Datenbankaenderung:
+# Auf eine Quellfamilie beschränken:
+make bundestag-refresh FAMILY=members   # Nur Abgeordnete und fehlende Profilbilder
+make bundestag-refresh FAMILY=votes     # Nur namentliche Abstimmungen (XLSX)
+make bundestag-refresh FAMILY=protocols # Nur Plenarprotokolle (XML)
 
-```bash
+# Trockenlauf zur Prüfung der Link-Discovery (ohne DB-Schreibzugriff):
 make bundestag-import DRY_RUN=1 LIMIT=5
 ```
+
+`bundestag-import` entdeckt und importiert alle aktuell verlinkten Bundestag-Biografien, namentlichen Abstimmungslisten und Plenarprotokolle der 21. Wahlperiode. `bundestag-refresh` prüft vorab gegen die vorhandenen Einträge in `source_documents` und lädt nur noch unverarbeitete URLs bzw. fehlende Profilbilder nach. Beide Befehle geben live Fortschrittsmeldungen im Terminal aus und schließen mit einem JSON-Zusammenfassungsbericht ab.
 
 ## Quellenabruf
 
@@ -38,7 +47,15 @@ Der Abruf speichert die unveraenderte Antwort in `var/source-archive/<hash-prefi
 make member-import URL=https://www.bundestag.de/abgeordnete/biografien/A/abdi_sanae-1043330
 ```
 
-Der Import nutzt die MDB-ID aus der amtlichen Biografie-URL. Er speichert Profilsnapshots, Bundestags- und Wahlkreisbuero-Adressen, Kontaktformular, externe Profil-Links, Wahlkreismandat und strukturierte Bundestagsrollen. Wiederholte Imports gleicher Fachwerte erzeugen keine doppelten Fakten.
+Der Import nutzt die MDB-ID aus der amtlichen Biografie-URL. Er speichert Profilsnapshots, Bundestags- und Wahlkreisbuero-Adressen, Kontaktformular, externe Profil-Links, Wahlkreismandat und strukturierte Bundestagsrollen. Zudem wird automatisch versucht, das verifizierte Profilbild aus Wikimedia Commons zu laden. Wiederholte Imports gleicher Fachwerte erzeugen keine doppelten Fakten.
+
+## Abgeordneten-Profilbilder (Wikimedia Commons & Wikidata)
+
+```bash
+make member-image URL=https://www.bundestag.de/abgeordnete/biografien/A/abdi_sanae-1043330
+```
+
+Der Importer ermittelt über die Wikidata-API das zur MDB-ID gehörende Wikidata-Item. Um Verwechslungen auszuschließen, wird das Item streng über `P1713` (Bundestag-Biografie-URL) oder `P1186` (MdB-ID) verifiziert; es findet kein Namensraten statt. Liegt ein Bild in Property `P18` vor, ruft der Crawler die Bild- und Lizenzmetadaten von der Wikimedia-Commons-API ab, archiviert den Quellabruf in `var/source-archive/` und `source_documents` und trägt das Bild in `member_image_candidates` ein. Freie Lizenzen (z. B. CC-BY, CC-BY-SA, CC0, Public Domain) werden geprüft (`license_approved = true`) und erhalten bei Erstzuordnung den Status `approved`.
 
 ## Namentliche Abstimmungen
 
