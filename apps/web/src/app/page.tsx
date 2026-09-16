@@ -1,5 +1,4 @@
 import Hero from "@/components/home/Hero";
-import Button from "@/components/ui/Button";
 
 export default function Home() {
   return (
@@ -13,19 +12,6 @@ export default function Home() {
           <p className="text-lg text-gray-600 max-w-2xl mx-auto">
             Civic-Tech-Plattform für transparente und lückenlos nachvollziehbare Informationen aus offiziellen politischen Primärquellen des Deutschen Bundestages.
           </p>
-        </div>
-
-        {/* Schnellzugriff auf Test-Routen */}
-        <div className="pt-4 flex flex-wrap justify-center gap-4">
-          <Button href="/politicians" variant="cta">
-            Politiker-Demo (Jan van Aken) →
-          </Button>
-          <Button href="/state-test" variant="secondary">
-            State-Management Test
-          </Button>
-          <Button href="/about" variant="secondary">
-            Über uns
-          </Button>
         </div>
       </div>
     </>
