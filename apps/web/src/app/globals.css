@@ -11,3 +11,7 @@
   --color-cta-hover: #82D4D9;
   --color-cta-border: #71C7CC;
 }
+
+html {
+  scrollbar-gutter: stable;
+}
