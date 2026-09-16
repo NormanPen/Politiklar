@@ -1,4 +1,5 @@
 .PHONY: help setup-dev setup-prod up down ps logs test crawler-install crawler-fetch member-import vote-import speeches-import speaker-verify bundestag-import bundestag-refresh db db-down db-logs db-ps db-shell db-dump db-dump-prod db-restore db-restore-prod db-migrate db-migrate-down db-migrate-prod db-migrate-down-prod db-prod db-prod-down api-dev api-serve docker-build api-docker api-docker-down api-docker-logs crawler-docker web-build web-docker web-docker-down web-docker-logs web-docker-shell web-sync-deps
+.PHONY: help setup-dev setup-prod deploy-prod up down ps logs test crawler-install crawler-fetch member-import vote-import speeches-import speaker-verify bundestag-import bundestag-refresh db db-down db-logs db-ps db-shell db-dump db-dump-prod db-restore db-restore-prod db-migrate db-migrate-down db-migrate-prod db-migrate-down-prod db-prod db-prod-down api-dev api-serve docker-build api-docker api-docker-down api-docker-logs crawler-docker web-build web-docker web-docker-down web-docker-logs web-docker-shell web-sync-deps
 
 COMPOSE_DEV = docker compose --env-file .env.development -f docker-compose.yml -f docker-compose.dev.yml
 COMPOSE_PROD = docker compose --env-file .env.production -f docker-compose.yml
@@ -11,6 +12,7 @@ help:
 		'Setup & Initialization (Zero-Host-Dependencies):' \
 		'  setup-dev          Complete setup for local development (starts DB, restores dump/migrates, starts API & Web)' \
 		'  setup-prod         Complete setup for production (starts prod DB, restores dump/migrates, starts API & Web)' \
+		'  deploy-prod        Deploy/update production server (git pull, build, migrate, restart, cleanup)' \
 		'' \
 		'All Services (Docker):' \
 		'  up                 Start all services in Docker (Postgres + API + Web)' \
@@ -113,6 +115,28 @@ setup-prod:
 		'  Web Frontend:  http://194.59.206.22 (oder https://politiklar.de)' \
 		'  Backend API:   http://194.59.206.22/api/v1' \
 		'  API Docs:      http://194.59.206.22/docs' \
+		'=========================================================='
+
+deploy-prod:
+	@echo "==> [Politiklar Deploy] Prüfe .env.production..."
+	@test -f .env.production || { echo "Fehler: .env.production existiert nicht!"; exit 1; }
+	@echo "==> [Politiklar Deploy] Hole neuesten Stand von origin/main..."
+	git fetch origin main
+	git reset --hard origin/main
+	@echo "==> [Politiklar Deploy] Baue Produktions-Container (API & Web)..."
+	$(COMPOSE_PROD) build
+	@echo "==> [Politiklar Deploy] Wende Datenbank-Migrationen an..."
+	$(COMPOSE_PROD) run --rm api alembic upgrade head
+	@echo "==> [Politiklar Deploy] Starte Container neu (unterbrechungsarm)..."
+	$(COMPOSE_PROD) up -d --remove-orphans
+	@echo "==> [Politiklar Deploy] Bereinige ungenutzte Docker-Images..."
+	docker image prune -f
+	@echo "==> [Politiklar Deploy] Führe Healthcheck durch..."
+	@sleep 5
+	@curl -sf http://localhost/healthz >/dev/null || { echo "Fehler: Healthcheck fehlgeschlagen!"; exit 1; }
+	@printf '\n%s\n%s\n%s\n' \
+		'==========================================================' \
+		'  Politiklar Deployment erfolgreich abgeschlossen!' \
 		'=========================================================='
 
 test:
