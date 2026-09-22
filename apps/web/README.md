@@ -1,36 +1,78 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Politiklar Web (Frontend)
 
-## Getting Started
+Die Webanwendung von Politiklar ist das moderne, benutzerfreundliche Frontend zur Darstellung transparenter und nachvollziehbarer Daten des Deutschen Bundestages. Sie ist mit **Next.js 16 (App Router)**, **React 19**, **TypeScript** und **Tailwind CSS** aufgebaut.
 
-First, run the development server:
+---
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+## 🏛️ Architektur & Zusammenspiel
+
+Das Frontend konsumiert die Daten des Python-Backends über die strukturierte REST-API:
+
+```text
+[Browser / User]
+       │
+       ▼
+[apps/web (Next.js - Port 3000)]
+       │ (REST / JSON)
+       ▼
+[apps/backend (FastAPI - Port 8000)]
+       │
+       ▼
+[PostgreSQL 17 Database]
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+---
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## 📂 Struktur
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+```text
+apps/web/
+├── src/
+│   └── app/                # Next.js App Router
+│       ├── layout.tsx      # Globales HTML-Layout, Fonts & Themes
+│       ├── page.tsx        # Startseite
+│       └── globals.css     # Globale Styling-Regeln & Design-Tokens
+├── public/                 # Statische Assets (Icons, Logos)
+├── Dockerfile              # Docker-Containerisierung für Produktion
+├── package.json            # NPM-Dependencies & Scripts
+└── tsconfig.json           # TypeScript-Konfiguration
+```
 
-## Learn More
+---
 
-To learn more about Next.js, take a look at the following resources:
+## 🛠️ Entwicklung
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+### Über Docker (Empfohlen im Gesamtprojekt)
+Die Anwendung startet automatisch mit dem Gesamt-Stack:
+```bash
+# Im Projekt-Root:
+make setup-dev   # oder: make up
+```
+* **Frontend:** [http://localhost:3000](http://localhost:3000)
+* **Backend API Docs:** [http://localhost:8000/docs](http://localhost:8000/docs)
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+### Lokale Entwicklung (Node.js auf dem Host)
+Falls du direkt im Frontend-Verzeichnis mit lokalem `npm` arbeiten möchtest:
 
-## Deploy on Vercel
+```bash
+cd apps/web
+npm install
+npm run dev
+```
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+### Scripts
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+| Befehl | Beschreibung |
+| :--- | :--- |
+| `npm run dev` | Startet den Next.js Entwicklungsserver mit Hot-Reloading |
+| `npm run build` | Erzeugt das optimierte Produktions-Build |
+| `npm run start` | Startet den Produktions-Server nach dem Build |
+| `npm run lint` | Führt ESLint-Prüfungen aus |
+
+---
+
+## 📖 Weiterführende Dokumentation
+
+* [Gesamtprojekt-Übersicht](../../README.md)
+* [Backend-Dokumentation](../backend/README.md)
+* [Datenbankschema & Modelle](../../docs/database-schema.md)
