@@ -16,8 +16,10 @@ services:
       - ./var/source-archive:/var/lib/politiklar/source-archive
 
   web:
+    image: politiklar-web:dev
     build:
       target: dev
+    command: npm run dev
     ports:
       - "127.0.0.1:${WEB_PORT:-3000}:3000"
     environment:
@@ -40,3 +42,9 @@ services:
       - ./apps/web:/app
       - /app/node_modules
       - /app/.next
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:3000 || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s

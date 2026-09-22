@@ -1,14 +1,34 @@
 .PHONY: help setup-dev setup-prod up down ps logs test crawler-install crawler-fetch member-import member-image member-images vote-import speeches-import speaker-verify bundestag-import bundestag-refresh db db-down db-logs db-ps db-shell db-dump db-dump-prod db-restore db-restore-prod db-migrate db-migrate-down db-migrate-prod db-migrate-down-prod db-prod db-prod-down api-dev api-serve docker-build api-docker api-docker-down api-docker-logs crawler-docker web-build web-docker web-docker-down web-docker-logs web-docker-shell web-sync-deps
 .PHONY: help setup-dev setup-prod deploy-prod up down ps logs test crawler-install crawler-fetch member-import member-image member-images vote-import speeches-import speaker-verify bundestag-import bundestag-refresh db db-down db-logs db-ps db-shell db-dump db-dump-prod db-restore db-restore-prod db-migrate db-migrate-down db-migrate-prod db-migrate-down-prod db-prod db-prod-down api-dev api-serve docker-build api-docker api-docker-down api-docker-logs crawler-docker web-build web-docker web-docker-down web-docker-logs web-docker-shell web-sync-deps
+.PHONY: help setup-dev setup-prod deploy-prod up down ps logs test crawler-install crawler-fetch member-import member-image member-images vote-import speeches-import speaker-verify bundestag-import bundestag-refresh db db-down db-logs db-ps db-shell db-dump db-dump-prod db-restore db-restore-prod db-migrate db-migrate-down db-migrate-prod db-migrate-down-prod db-prod db-prod-down api-dev api-serve docker-build api-docker api-docker-down api-docker-logs crawler-docker web-build web-docker web-docker-down web-docker-logs web-docker-shell web-sync-deps prod-up prod-down prod-ps prod-logs prod-refresh dev-up dev-down dev-ps dev-logs dev-refresh
 
 COMPOSE_DEV = docker compose --env-file .env.development -f docker-compose.yml -f docker-compose.dev.yml
 COMPOSE_PROD = docker compose --env-file .env.production -f docker-compose.yml
 COMPOSE ?= $(COMPOSE_DEV)
+
+# Environment selection: ENV=dev or ENV=prod
+# Auto-detect logic:
+# 1. Explicit variable ENV (e.g. make up ENV=prod or export ENV=prod)
+# 2. If .env.production exists and .env.development does NOT -> default to 'prod'
+# 3. If .env.development exists and .env.production does NOT -> default to 'dev'
+# 4. If both exist: default to 'dev' (local PC dev with backup prod credentials)
+ENV ?= $(if $(and $(wildcard .env.production),$(wildcard .env.development)),dev,$(if $(wildcard .env.production),prod,dev))
+
+ifeq ($(ENV),prod)
+COMPOSE = $(COMPOSE_PROD)
+ENV_FILE = .env.production
+else
+COMPOSE = $(COMPOSE_DEV)
+ENV_FILE = .env.development
+endif
+
 DUMP_FILE ?= var/dumps/politiklar_backup.dump
 FILE ?= $(DUMP_FILE)
 
 help:
 	@printf '%s\n' \
+		'Active Environment: $(ENV) (via $(ENV_FILE))' \
+		'' \
 		'Setup & Initialization (Zero-Host-Dependencies):' \
 		'  setup-dev          Complete setup for local development (starts DB, restores dump/migrates, starts API & Web)' \
 		'  setup-prod         Complete setup for production (starts prod DB, restores dump/migrates, starts API & Web)' \
@@ -19,6 +39,21 @@ help:
 		'  down               Stop all Docker services' \
 		'  ps                 Show status of all Docker containers' \
 		'  logs               Follow logs of all Docker containers' \
+		'All Services (Docker - Environment: $(ENV)): ' \
+		'  up                 Start all services for active environment' \
+		'  down               Stop all services for active environment' \
+		'  ps                 Show status of active containers' \
+		'  logs               Follow logs of active containers' \
+		'  prod-up            Explicitly start production services' \
+		'  prod-down          Explicitly stop production services' \
+		'  prod-ps            Explicitly show production container status' \
+		'  prod-logs          Explicitly follow production container logs' \
+		'  prod-refresh       Explicitly refresh Bundestag data in production' \
+		'  dev-up             Explicitly start development services' \
+		'  dev-down           Explicitly stop development services' \
+		'  dev-ps             Explicitly show development container status' \
+		'  dev-logs           Explicitly follow development container logs' \
+		'  dev-refresh        Explicitly refresh Bundestag data in development' \
 		'  test               Run backend testsuite (in Docker or local venv)' \
 		'' \
 		'Environment (Database):' \
@@ -145,6 +180,7 @@ test:
 		apps/backend/.venv/bin/pytest apps/backend/tests; \
 	else \
 		$(COMPOSE_DEV) run --rm api pytest tests; \
+		$(COMPOSE) run --rm api pytest tests; \
 	fi
 
 crawler-install:
@@ -158,6 +194,7 @@ crawler-fetch:
 		apps/backend/.venv/bin/politiklar-crawl fetch "$(URL)"; \
 	else \
 		$(COMPOSE_DEV) run --rm api politiklar-crawl fetch "$(URL)"; \
+		$(COMPOSE) run --rm api politiklar-crawl fetch "$(URL)"; \
 	fi
 
 # Einzelnen Abgeordneten per Biografie-URL importieren (inkl. automatischem Wikimedia-Profilbildabruf)
@@ -165,8 +202,10 @@ member-import:
 	@test -n "$(URL)" || (echo "Usage: make member-import URL=https://www.bundestag.de/abgeordnete/biografien/..." && exit 1)
 	@if [ -x apps/backend/.venv/bin/politiklar-crawl ]; then \
 		set -a && . ./.env.development && set +a && apps/backend/.venv/bin/politiklar-crawl import-biography "$(URL)"; \
+		set -a && . ./$(ENV_FILE) && set +a && apps/backend/.venv/bin/politiklar-crawl import-biography "$(URL)"; \
 	else \
 		$(COMPOSE_DEV) run --rm api politiklar-crawl import-biography "$(URL)"; \
+		$(COMPOSE) run --rm api politiklar-crawl import-biography "$(URL)"; \
 	fi
 
 # Gezielt das Profilbild für einen Abgeordneten über Wikidata & Wikimedia Commons nachladen/aktualisieren
@@ -174,16 +213,20 @@ member-image:
 	@test -n "$(URL)" || (echo "Usage: make member-image URL=https://www.bundestag.de/abgeordnete/biografien/..." && exit 1)
 	@if [ -x apps/backend/.venv/bin/politiklar-crawl ]; then \
 		set -a && . ./.env.development && set +a && apps/backend/.venv/bin/politiklar-crawl import-member-image "$(URL)"; \
+		set -a && . ./$(ENV_FILE) && set +a && apps/backend/.venv/bin/politiklar-crawl import-member-image "$(URL)"; \
 	else \
 		$(COMPOSE_DEV) run --rm api politiklar-crawl import-member-image "$(URL)"; \
+		$(COMPOSE) run --rm api politiklar-crawl import-member-image "$(URL)"; \
 	fi
 
 # Fehlende Profilbilder für bereits in der Datenbank gespeicherte Abgeordnete nachziehen (z. B. LIMIT=20)
 member-images:
 	@if [ -x apps/backend/.venv/bin/politiklar-crawl ]; then \
 		set -a && . ./.env.development && set +a && apps/backend/.venv/bin/politiklar-crawl sync-member-images $(if $(LIMIT),--limit $(LIMIT)); \
+		set -a && . ./$(ENV_FILE) && set +a && apps/backend/.venv/bin/politiklar-crawl sync-member-images $(if $(LIMIT),--limit $(LIMIT)); \
 	else \
 		$(COMPOSE_DEV) run --rm api politiklar-crawl sync-member-images $(if $(LIMIT),--limit $(LIMIT)); \
+		$(COMPOSE) run --rm api politiklar-crawl sync-member-images $(if $(LIMIT),--limit $(LIMIT)); \
 	fi
 
 # Namentliche Abstimmung aus offizieller Excel-Tabelle (XLSX) importieren
@@ -191,8 +234,10 @@ vote-import:
 	@test -n "$(URL)" || (echo "Usage: make vote-import URL=https://www.bundestag.de/resource/blob/...xlsx" && exit 1)
 	@if [ -x apps/backend/.venv/bin/politiklar-crawl ]; then \
 		set -a && . ./.env.development && set +a && apps/backend/.venv/bin/politiklar-crawl import-named-vote "$(URL)"; \
+		set -a && . ./$(ENV_FILE) && set +a && apps/backend/.venv/bin/politiklar-crawl import-named-vote "$(URL)"; \
 	else \
 		$(COMPOSE_DEV) run --rm api politiklar-crawl import-named-vote "$(URL)"; \
+		$(COMPOSE) run --rm api politiklar-crawl import-named-vote "$(URL)"; \
 	fi
 
 # Plenarprotokoll (XML) mit allen Reden importieren
@@ -200,8 +245,10 @@ speeches-import:
 	@test -n "$(URL)" || (echo "Usage: make speeches-import URL=https://www.bundestag.de/resource/blob/...xml" && exit 1)
 	@if [ -x apps/backend/.venv/bin/politiklar-crawl ]; then \
 		set -a && . ./.env.development && set +a && apps/backend/.venv/bin/politiklar-crawl import-protocol "$(URL)"; \
+		set -a && . ./$(ENV_FILE) && set +a && apps/backend/.venv/bin/politiklar-crawl import-protocol "$(URL)"; \
 	else \
 		$(COMPOSE_DEV) run --rm api politiklar-crawl import-protocol "$(URL)"; \
+		$(COMPOSE) run --rm api politiklar-crawl import-protocol "$(URL)"; \
 	fi
 
 # Protokoll-Sprecher-ID anhand zweier Belege verbindlich mit einer MDB-ID verknüpfen
@@ -209,8 +256,10 @@ speaker-verify:
 	@test -n "$(MDB_ID)" -a -n "$(SPEAKER_ID)" -a -n "$(BIOGRAPHY_URL)" -a -n "$(PROTOCOL_URL)" -a -n "$(VERIFIED_BY)" || (echo "Usage: make speaker-verify MDB_ID=... SPEAKER_ID=... BIOGRAPHY_URL=https://www.bundestag.de/... PROTOCOL_URL=https://www.bundestag.de/... VERIFIED_BY=name" && exit 1)
 	@if [ -x apps/backend/.venv/bin/politiklar-crawl ]; then \
 		set -a && . ./.env.development && set +a && apps/backend/.venv/bin/politiklar-crawl verify-plenary-speaker --mdb-id "$(MDB_ID)" --speaker-id "$(SPEAKER_ID)" --biography-evidence-url "$(BIOGRAPHY_URL)" --protocol-evidence-url "$(PROTOCOL_URL)" --verified-by "$(VERIFIED_BY)"; \
+		set -a && . ./$(ENV_FILE) && set +a && apps/backend/.venv/bin/politiklar-crawl verify-plenary-speaker --mdb-id "$(MDB_ID)" --speaker-id "$(SPEAKER_ID)" --biography-evidence-url "$(BIOGRAPHY_URL)" --protocol-evidence-url "$(PROTOCOL_URL)" --verified-by "$(VERIFIED_BY)"; \
 	else \
 		$(COMPOSE_DEV) run --rm api politiklar-crawl verify-plenary-speaker --mdb-id "$(MDB_ID)" --speaker-id "$(SPEAKER_ID)" --biography-evidence-url "$(BIOGRAPHY_URL)" --protocol-evidence-url "$(PROTOCOL_URL)" --verified-by "$(VERIFIED_BY)"; \
+		$(COMPOSE) run --rm api politiklar-crawl verify-plenary-speaker --mdb-id "$(MDB_ID)" --speaker-id "$(SPEAKER_ID)" --biography-evidence-url "$(BIOGRAPHY_URL)" --protocol-evidence-url "$(PROTOCOL_URL)" --verified-by "$(VERIFIED_BY)"; \
 	fi
 
 # Vollständiger Import aller Quellen der aktuellen Wahlperiode
@@ -221,8 +270,10 @@ speaker-verify:
 bundestag-import:
 	@if [ -x apps/backend/.venv/bin/politiklar-crawl ]; then \
 		set -a && . ./.env.development && set +a && apps/backend/.venv/bin/politiklar-crawl import-all $(if $(LIMIT),--limit $(LIMIT)) $(if $(FAMILY),--family $(FAMILY)) $(if $(DRY_RUN),--dry-run); \
+		set -a && . ./$(ENV_FILE) && set +a && apps/backend/.venv/bin/politiklar-crawl import-all $(if $(LIMIT),--limit $(LIMIT)) $(if $(FAMILY),--family $(FAMILY)) $(if $(DRY_RUN),--dry-run); \
 	else \
 		$(COMPOSE_DEV) run --rm api politiklar-crawl import-all $(if $(LIMIT),--limit $(LIMIT)) $(if $(FAMILY),--family $(FAMILY)) $(if $(DRY_RUN),--dry-run); \
+		$(COMPOSE) run --rm api politiklar-crawl import-all $(if $(LIMIT),--limit $(LIMIT)) $(if $(FAMILY),--family $(FAMILY)) $(if $(DRY_RUN),--dry-run); \
 	fi
 
 # Inkrementelles Update: Überspringt bereits vorhandene Quellen sekundenschnell
@@ -234,22 +285,28 @@ bundestag-import:
 bundestag-refresh:
 	@if [ -x apps/backend/.venv/bin/politiklar-crawl ]; then \
 		set -a && . ./.env.development && set +a && apps/backend/.venv/bin/politiklar-crawl import-all --refresh $(if $(LIMIT),--limit $(LIMIT)) $(if $(FAMILY),--family $(FAMILY)) $(if $(DRY_RUN),--dry-run); \
+		set -a && . ./$(ENV_FILE) && set +a && apps/backend/.venv/bin/politiklar-crawl import-all --refresh $(if $(LIMIT),--limit $(LIMIT)) $(if $(FAMILY),--family $(FAMILY)) $(if $(DRY_RUN),--dry-run); \
 	else \
 		$(COMPOSE_DEV) run --rm api politiklar-crawl import-all --refresh $(if $(LIMIT),--limit $(LIMIT)) $(if $(FAMILY),--family $(FAMILY)) $(if $(DRY_RUN),--dry-run); \
+		$(COMPOSE) run --rm api politiklar-crawl import-all --refresh $(if $(LIMIT),--limit $(LIMIT)) $(if $(FAMILY),--family $(FAMILY)) $(if $(DRY_RUN),--dry-run); \
 	fi
 
 db-migrate:
 	@if [ -x apps/backend/.venv/bin/alembic ]; then \
 		cd apps/backend && set -a && . ../../.env.development && set +a && .venv/bin/alembic upgrade head; \
+		cd apps/backend && set -a && . ../../$(ENV_FILE) && set +a && .venv/bin/alembic upgrade head; \
 	else \
 		$(COMPOSE_DEV) run --rm api alembic upgrade head; \
+		$(COMPOSE) run --rm api alembic upgrade head; \
 	fi
 
 db-migrate-down:
 	@if [ -x apps/backend/.venv/bin/alembic ]; then \
 		cd apps/backend && set -a && . ../../.env.development && set +a && .venv/bin/alembic downgrade -1; \
+		cd apps/backend && set -a && . ../../$(ENV_FILE) && set +a && .venv/bin/alembic downgrade -1; \
 	else \
 		$(COMPOSE_DEV) run --rm api alembic downgrade -1; \
+		$(COMPOSE) run --rm api alembic downgrade -1; \
 	fi
 
 db-migrate-prod:
@@ -259,31 +316,69 @@ db-migrate-down-prod:
 	$(COMPOSE_PROD) run --rm api alembic downgrade -1
 
 up:
+	$(COMPOSE) up -d
+
+down:
+	$(COMPOSE) stop
+
+ps:
+	$(COMPOSE) ps
+
+logs:
+	$(COMPOSE) logs -f
+
+prod-up:
+	$(COMPOSE_PROD) up -d
+
+prod-down:
+	$(COMPOSE_PROD) stop
+
+prod-ps:
+	$(COMPOSE_PROD) ps
+
+prod-logs:
+	$(COMPOSE_PROD) logs -f
+
+prod-refresh:
+	@$(MAKE) bundestag-refresh ENV=prod
+
+dev-up:
 	$(COMPOSE_DEV) up -d
 
 down:
+dev-down:
 	$(COMPOSE_DEV) stop
 
 ps:
+dev-ps:
 	$(COMPOSE_DEV) ps
 
 logs:
+dev-logs:
 	$(COMPOSE_DEV) logs -f
+
+dev-refresh:
+	@$(MAKE) bundestag-refresh ENV=dev
 
 db:
 	$(COMPOSE_DEV) up -d postgres
+	$(COMPOSE) up -d postgres
 
 db-down:
 	$(COMPOSE_DEV) stop postgres
+	$(COMPOSE) stop postgres
 
 db-logs:
 	$(COMPOSE_DEV) logs -f postgres
+	$(COMPOSE) logs -f postgres
 
 db-ps:
 	$(COMPOSE_DEV) ps postgres
+	$(COMPOSE) ps postgres
 
 db-shell:
 	$(COMPOSE_DEV) exec postgres sh -c 'psql -U "$$POSTGRES_USER" -d "$$POSTGRES_DB"'
+	$(COMPOSE) exec postgres sh -c 'psql -U "$$POSTGRES_USER" -d "$$POSTGRES_DB"'
 
 db-dump:
 	@$(COMPOSE) ps --status running -q postgres | grep -q . || { echo "Fehler: PostgreSQL läuft nicht. Bitte zuerst 'make db' oder 'make db-prod' ausführen."; exit 1; }
@@ -324,33 +419,43 @@ api-dev:
 
 api-serve:
 	set -a && . ./.env.development && set +a && apps/backend/.venv/bin/uvicorn api.main:app --host 0.0.0.0 --port $${PORT:-8000}
+	set -a && . ./$(ENV_FILE) && set +a && apps/backend/.venv/bin/uvicorn api.main:app --host 0.0.0.0 --port $${PORT:-8000}
 
 docker-build:
 	$(COMPOSE_DEV) build api web
+	$(COMPOSE) build api web
 
 api-docker:
 	$(COMPOSE_DEV) up -d api
+	$(COMPOSE) up -d api
 
 api-docker-down:
 	$(COMPOSE_DEV) stop api
+	$(COMPOSE) stop api
 
 api-docker-logs:
 	$(COMPOSE_DEV) logs -f api
+	$(COMPOSE) logs -f api
 
 web-build:
 	$(COMPOSE_DEV) build web
+	$(COMPOSE) build web
 
 web-docker:
 	$(COMPOSE_DEV) up -d web
+	$(COMPOSE) up -d web
 
 web-docker-down:
 	$(COMPOSE_DEV) stop web
+	$(COMPOSE) stop web
 
 web-docker-logs:
 	$(COMPOSE_DEV) logs -f web
+	$(COMPOSE) logs -f web
 
 web-docker-shell:
 	$(COMPOSE_DEV) exec web sh
+	$(COMPOSE) exec web sh
 
 web-sync-deps:
 	@mkdir -p apps/web/node_modules
@@ -359,3 +464,4 @@ web-sync-deps:
 crawler-docker:
 	@test -n "$(CMD)" || (echo "Usage: make crawler-docker CMD=\"import-all --help\"" && exit 1)
 	$(COMPOSE_DEV) run --rm api politiklar-crawl $(CMD)
+	$(COMPOSE) run --rm api politiklar-crawl $(CMD)
