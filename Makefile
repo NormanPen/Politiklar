@@ -293,19 +293,19 @@ bundestag-refresh:
 
 db-migrate:
 	@if [ -x apps/backend/.venv/bin/alembic ]; then \
-		cd apps/backend && set -a && . ../../.env.development && set +a && .venv/bin/alembic upgrade head; \
 		cd apps/backend && set -a && . ../../$(ENV_FILE) && set +a && .venv/bin/alembic upgrade head; \
-	else \
+	elif [ -n "$(COMPOSE_DEV)" ]; then \
 		$(COMPOSE_DEV) run --rm api alembic upgrade head; \
+	else \
 		$(COMPOSE) run --rm api alembic upgrade head; \
 	fi
 
 db-migrate-down:
 	@if [ -x apps/backend/.venv/bin/alembic ]; then \
-		cd apps/backend && set -a && . ../../.env.development && set +a && .venv/bin/alembic downgrade -1; \
 		cd apps/backend && set -a && . ../../$(ENV_FILE) && set +a && .venv/bin/alembic downgrade -1; \
-	else \
+	elif [ -n "$(COMPOSE_DEV)" ]; then \
 		$(COMPOSE_DEV) run --rm api alembic downgrade -1; \
+	else \
 		$(COMPOSE) run --rm api alembic downgrade -1; \
 	fi
 

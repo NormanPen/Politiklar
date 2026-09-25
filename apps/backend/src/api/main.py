@@ -9,6 +9,7 @@ from api.routers import (
     auth_router,
     health_router,
     members_router,
+    rag_router,
     sources_router,
     speeches_router,
     votes_router,
@@ -46,6 +47,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     app.include_router(speeches_router)
     app.include_router(sources_router)
     app.include_router(auth_router)
+    app.include_router(rag_router)
 
     @app.get("/", include_in_schema=False)
     def root() -> RedirectResponse:

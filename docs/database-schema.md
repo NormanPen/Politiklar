@@ -226,5 +226,28 @@ erDiagram
 | `user_accounts` | OAuth-Identitaeten (Google, Microsoft, etc.) je Benutzer |
 | `user_api_keys` | Gehashte Authentifizierungstokens fuer API & MCP-Server |
 | `user_favorites` | Benutzer-Merklisten fuer Abgeordnete, Gesetze und Dossiers |
+| `document_chunks` | Vektor-Embeddings (pgvector HNSW) und Textabschnitte mit Primaerquellenbeleg |
+
+## RAG & Vektorspeicherung
+
+```mermaid
+erDiagram
+    SOURCE_DOCUMENTS ||--o{ DOCUMENT_CHUNKS : belegt
+    PARLIAMENTARY_SPEECHES ||--o{ DOCUMENT_CHUNKS : unterteilt
+
+    DOCUMENT_CHUNKS {
+        uuid id PK
+        uuid source_document_id FK
+        uuid speech_id FK
+        integer chunk_index
+        text chunk_content
+        string content_sha256
+        vector embedding
+        jsonb metadata_json
+        datetime created_at
+    }
+```
+
+`document_chunks` speichert semantische Abschnitte parlamentarischer Texte (z. B. Reden oder spaeter Drucksachen) inklusive ihrer 768-dimensionalen Vektoreinbettungen (Google Gemini `text-embedding-004`). Ein HNSW-Index (`vector_cosine_ops`) beschleunigt Aehnlichkeitssuchen fuer die evidenzbasierte Politiklar-RAG-Pipeline. Jeder Chunk ist strikt ueber `source_document_id` an die amtliche Primaerquelle gebunden.
 
 Zurueck zur [Dokumentationsuebersicht](README.md).

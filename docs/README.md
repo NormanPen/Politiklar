@@ -6,6 +6,7 @@ Diese Dokumentation beschreibt den aktuellen, tatsaechlich implementierten Entwi
 - [Crawler und Datenimporte](crawler-and-import.md)
 - [Datenbankschema](database-schema.md)
 - [Aktuelle Architektur](architecture.md)
+- [RAG- und Vektor-Architektur](rag-architecture.md)
 - [Projektstruktur](project-structure.md)
 - [Technologie-Stack](technology-stack.md)
 - [Mitwirken](contributing.md)
