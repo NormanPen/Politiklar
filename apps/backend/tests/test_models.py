@@ -1,6 +1,7 @@
 """Schema-level regression tests for source and portrait safeguards."""
 
 from db.relational.models import (
+    DocumentChunk,
     MemberImageCandidate,
     MemberSourceIdentifier,
     MemberSourceIdentifierEvidence,
@@ -42,3 +43,11 @@ def test_user_and_auth_constraints() -> None:
 
     fav_constraints = {constraint.name for constraint in UserFavorite.__table__.constraints}
     assert "uq_user_favorites_entity" in fav_constraints
+
+
+def test_document_chunks_constraints() -> None:
+    chunk_constraints = {constraint.name for constraint in DocumentChunk.__table__.constraints}
+    assert "uq_document_chunk_identity" in chunk_constraints
+
+    index_names = {index.name for index in DocumentChunk.__table__.indexes}
+    assert "ix_document_chunks_embedding" in index_names

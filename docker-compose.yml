@@ -30,6 +30,7 @@ services:
       CRAWLER_SOURCE_ARCHIVE_PATH: ${CRAWLER_SOURCE_ARCHIVE_PATH:-/var/lib/politiklar/source-archive}
       API_CORS_ORIGINS: ${API_CORS_ORIGINS:-http://localhost:3000}
       AUTH_SECRET: ${AUTH_SECRET:-}
+      GEMINI_API_KEY: ${GEMINI_API_KEY:-}
     volumes:
       - source_archive:/var/lib/politiklar/source-archive
     healthcheck:

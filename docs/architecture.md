@@ -19,12 +19,14 @@ flowchart TB
 - Alembic-Migrationen
 - Importer fuer einzelne Bundestag-Biografien, namentliche Abstimmungen und Plenarprotokolle
 - FastAPI Backend-API (`apps/backend/src/api/`) mit OpenAPI-Dokumentation (`/docs`), Healthchecks, Quellenprovenienz, Abgeordneten-, Abstimmungs- und Reden-Endpunkten
+- RAG- und Vektordaten-Grundgerüst (pgvector HNSW-Index, Gemini-Anbindung, LangChain Chunker und Endpunkte auf Branch `feature/rag-gemini-pgvector`, siehe [rag-architecture.md](rag-architecture.md))
 
 ## Noch geplant
 
 - Vollstaendige Mitgliederdiscovery
 - Drucksachenimport mit konfiguriertem DIP-API-Key
 - Verifizierte Zuordnung von Abstimmungs- und Redezeilen zur MDB-ID
-- Web-Anwendung, RAG und MCP-Server
+- Ingestion-Job zur Einbettung historischer Reden und Dokumente
+- Web-Anwendung und MCP-Server
 
 Zurueck zur [Dokumentationsuebersicht](README.md).
