@@ -3,6 +3,7 @@ fastapi<1,>=0.115
 httpx<0.29,>=0.28
 langchain<1,>=0.3
 langchain-google-genai<5,>=2.0
+mcp<3,>=1.2
 openpyxl<4,>=3.1
 pgvector<1,>=0.3
 psycopg[binary]<4,>=3.2

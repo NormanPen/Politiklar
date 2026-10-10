@@ -2,4 +2,5 @@
 politiklar-api = api.__main__:main
 politiklar-crawl = crawler.__main__:main
 politiklar-import-member = crawler.__main__:main
+politiklar-mcp = mcp_server.cli:main
 politiklar-rag = rag.cli:main
