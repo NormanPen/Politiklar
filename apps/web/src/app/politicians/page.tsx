@@ -1,3 +1,5 @@
+import PoliticianChat from "@/components/politicians/PoliticianChat";
+
 interface MemberImage {
   media_url: string;
   commons_file_page_url: string;
@@ -178,6 +180,13 @@ export default async function PoliticiansPage() {
           </div>
         )}
       </div>
+
+      {/* Interaktiver KI-Chatbot für diesen Politiker */}
+      <PoliticianChat
+        mdbId={member.mdb_id}
+        memberName={`${member.first_name} ${member.last_name}`}
+        memberGroup={member.parliamentary_group}
+      />
     </div>
   );
 }

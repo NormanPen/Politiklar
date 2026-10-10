@@ -215,3 +215,59 @@ def test_get_member_not_found(client: TestClient) -> None:
     response = client.get("/api/v1/members/999999")
     assert response.status_code == 404
     assert "999999 not found" in response.json()["detail"]
+
+
+def test_ask_member_question_returns_grounded_answer(client: TestClient, db_session: Session) -> None:
+    from unittest.mock import MagicMock, patch
+
+    doc = _seed_source_doc(db_session)
+    m = BundestagMember(mdb_id=3001)
+    db_session.add(m)
+    db_session.commit()
+
+    p = MemberProfileSnapshot(
+        member_id=m.id,
+        source_document_id=doc.id,
+        first_name="Sabine",
+        last_name="Musterfrau",
+        parliamentary_group="CDU/CSU",
+        occupation="Rechtsanwältin",
+        content_sha256="test-sha-p3",
+        is_current=True,
+        observed_at=datetime.now(timezone.utc),
+    )
+    aff = MemberAffiliation(
+        member_id=m.id,
+        source_document_id=doc.id,
+        category="gremium",
+        organization_name="Rechtsausschuss",
+        role_name="Ordentliches Mitglied",
+        content_sha256="test-sha-aff3",
+        observed_at=datetime.now(timezone.utc),
+    )
+    db_session.add_all([p, aff])
+    db_session.commit()
+
+    mock_provider = MagicMock()
+    mock_provider.is_configured = True
+    mock_provider.generate_text.return_value = "Sabine Musterfrau ist Mitglied im Rechtsausschuss."
+    mock_provider.embed_query.return_value = [0.1] * 768
+
+    with patch("api.routers.members.RagService") as mock_rag_service:
+        instance = mock_rag_service.return_value
+        instance.provider = mock_provider
+        instance.get_query_embedding.return_value = [0.1] * 768
+        instance.search_similar_chunks.return_value = []
+
+        response = client.post(
+            "/api/v1/members/3001/ask",
+            json={"question": "In welchen Gremien ist Sabine Musterfrau?"},
+        )
+
+    assert response.status_code == 200
+    data = response.json()
+    assert data["is_sufficient_evidence"] is True
+    assert "Rechtsausschuss" in data["answer"]
+    assert len(data["citations"]) >= 1
+    assert data["citations"][0]["speaker"] == "Sabine Musterfrau"
+

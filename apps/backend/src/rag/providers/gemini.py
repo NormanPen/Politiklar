@@ -31,6 +31,8 @@ class GeminiProvider(AIProvider):
                 model=self.settings.gemini_chat_model,
                 google_api_key=self.settings.gemini_api_key,
                 temperature=0.0,
+                max_retries=0,
+                timeout=10.0,
             )
         return self._llm_client
 
@@ -42,6 +44,7 @@ class GeminiProvider(AIProvider):
             self._embeddings_client = GoogleGenerativeAIEmbeddings(
                 model=self.settings.gemini_embedding_model,
                 google_api_key=self.settings.gemini_api_key,
+                max_retries=0,
             )
         return self._embeddings_client
 

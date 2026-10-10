@@ -13,6 +13,7 @@ dependencies = [
     "httpx>=0.28,<0.29",
     "langchain>=0.3,<1",
     "langchain-google-genai>=2.0,<5",
+    "mcp>=1.2,<3",
     "openpyxl>=3.1,<4",
     "pgvector>=0.3,<1",
     "psycopg[binary]>=3.2,<4",
@@ -32,6 +33,7 @@ politiklar-api = "api.__main__:main"
 politiklar-crawl = "crawler.__main__:main"
 politiklar-import-member = "crawler.__main__:main"
 politiklar-rag = "rag.cli:main"
+politiklar-mcp = "mcp_server.cli:main"
 
 
 [tool.setuptools]

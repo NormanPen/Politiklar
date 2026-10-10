@@ -8,6 +8,7 @@ Requires-Dist: fastapi<1,>=0.115
 Requires-Dist: httpx<0.29,>=0.28
 Requires-Dist: langchain<1,>=0.3
 Requires-Dist: langchain-google-genai<5,>=2.0
+Requires-Dist: mcp<3,>=1.2
 Requires-Dist: openpyxl<4,>=3.1
 Requires-Dist: pgvector<1,>=0.3
 Requires-Dist: psycopg[binary]<4,>=3.2

@@ -69,4 +69,5 @@ tests/test_models.py
 tests/test_named_votes.py
 tests/test_plenary_speeches.py
 tests/test_rag_chunker.py
+tests/test_rag_cli.py
 tests/test_rag_service.py
