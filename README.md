@@ -26,6 +26,8 @@ make setup-dev
 - [Crawler und Datenimporte](docs/crawler-and-import.md)
 - [Datenbankschema und Mermaid-Diagramme](docs/database-schema.md)
 - [Aktuelle Architektur](docs/architecture.md)
+- [RAG- und Vektor-Architektur](docs/rag-architecture.md)
+- [Model Context Protocol (MCP) Server](docs/mcp-server.md)
 - [Projektstruktur](docs/project-structure.md)
 - [Technologie-Stack](docs/technology-stack.md)
 - [Mitwirken](docs/contributing.md)

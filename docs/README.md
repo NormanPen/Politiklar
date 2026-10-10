@@ -7,6 +7,7 @@ Diese Dokumentation beschreibt den aktuellen, tatsaechlich implementierten Entwi
 - [Datenbankschema](database-schema.md)
 - [Aktuelle Architektur](architecture.md)
 - [RAG- und Vektor-Architektur](rag-architecture.md)
+- [Model Context Protocol (MCP) Server](mcp-server.md)
 - [Projektstruktur](project-structure.md)
 - [Technologie-Stack](technology-stack.md)
 - [Mitwirken](contributing.md)
