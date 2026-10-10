@@ -8,6 +8,7 @@ src/api/routers/__init__.py
 src/api/routers/auth.py
 src/api/routers/health.py
 src/api/routers/members.py
+src/api/routers/rag.py
 src/api/routers/sources.py
 src/api/routers/speeches.py
 src/api/routers/votes.py
@@ -16,6 +17,7 @@ src/api/schemas/auth.py
 src/api/schemas/common.py
 src/api/schemas/health.py
 src/api/schemas/members.py
+src/api/schemas/rag.py
 src/api/schemas/sources.py
 src/api/schemas/speeches.py
 src/api/schemas/votes.py
@@ -42,9 +44,20 @@ src/politiklar_backend.egg-info/dependency_links.txt
 src/politiklar_backend.egg-info/entry_points.txt
 src/politiklar_backend.egg-info/requires.txt
 src/politiklar_backend.egg-info/top_level.txt
+src/rag/__init__.py
+src/rag/chunker.py
+src/rag/cli.py
+src/rag/embeddings.py
+src/rag/prompts.py
+src/rag/service.py
+src/rag/providers/__init__.py
+src/rag/providers/base.py
+src/rag/providers/factory.py
+src/rag/providers/gemini.py
 tests/test_api_auth.py
 tests/test_api_health.py
 tests/test_api_members.py
+tests/test_api_rag.py
 tests/test_api_sources.py
 tests/test_api_speeches.py
 tests/test_api_votes.py
@@ -55,3 +68,5 @@ tests/test_member_images.py
 tests/test_models.py
 tests/test_named_votes.py
 tests/test_plenary_speeches.py
+tests/test_rag_chunker.py
+tests/test_rag_service.py

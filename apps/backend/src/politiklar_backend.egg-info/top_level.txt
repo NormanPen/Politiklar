@@ -2,3 +2,4 @@ api
 core
 crawler
 db
+rag

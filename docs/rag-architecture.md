@@ -50,14 +50,20 @@ erDiagram
 ```text
 apps/backend/src/
 ├── core/
-│   └── settings.py          # GEMINI_API_KEY, Modelle & RAG-Schwellenwerte
+│   └── settings.py          # AI_PROVIDER, GEMINI_API_KEY, Modelle & RAG-Schwellenwerte
 ├── db/relational/
 │   └── models.py            # DocumentChunk-Modell mit Vector(768)
-├── rag/                     # Kernlogik der RAG-Pipeline
+├── rag/                     # Kernlogik der RAG-Pipeline & Provider-Abstraktion
 │   ├── __init__.py
 │   ├── chunker.py           # Zerteilt Reden/Texte unter Erhalt aller Metadaten
-│   ├── embeddings.py        # Factory für GoogleGenerativeAIEmbeddings
+│   ├── cli.py               # politiklar-rag CLI (info, embed, generate, ask)
+│   ├── embeddings.py        # Kompatibilitäts-Wrapper für Embeddings-Client
 │   ├── prompts.py           # Neutrale System-Prompts & Belegregeln
+│   ├── providers/           # Austauschbare AI-Provider
+│   │   ├── __init__.py
+│   │   ├── base.py          # AIProvider, LLMProvider, EmbeddingProvider Interfaces
+│   │   ├── factory.py       # get_ai_provider(), register_ai_provider()
+│   │   └── gemini.py        # GeminiProvider (LangChain Google GenAI Anbindung)
 │   └── service.py           # RagService: Cosine-Suche & Grounded Generation
 └── api/
     ├── schemas/rag.py       # Pydantic Request/Response DTOs
@@ -102,6 +108,7 @@ Führt eine reine semantische Vektorsuche ohne LLM-Aufruf durch und gibt die äh
 
 In `.env.development` (lokal) bzw. `.env` (Container):
 ```bash
+AI_PROVIDER="gemini"
 GEMINI_API_KEY="DEIN_API_SCHLUESSEL"
 GEMINI_CHAT_MODEL="gemini-3.8-flash"
 GEMINI_EMBEDDING_MODEL="models/gemini-embedding-001"
