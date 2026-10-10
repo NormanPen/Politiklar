@@ -1,8 +1,9 @@
-"""Unit tests for the Politiklar MCP Server and tools."""
-
+import hashlib
 from datetime import datetime, timezone
+import os
 from unittest.mock import MagicMock, patch
 from uuid import uuid4
+from mcp.server.mcpserver.exceptions import ToolError
 import pytest
 
 from core.settings import Settings
@@ -14,7 +15,10 @@ from db.relational.models import (
     NamedVote,
     NamedVoteRow,
     SourceDocument,
+    User,
+    UserApiKey,
 )
+from mcp_server.auth import verify_mcp_token
 from mcp_server.server import create_mcp_server
 from mcp_server.tools.sql_tools import (
     list_recent_named_votes,
@@ -230,3 +234,72 @@ def test_query_speeches_semantic_tool(db_session) -> None:
     assert results[0]["speaker"] == "Erika Mustermann"
     assert results[0]["similarity_score"] == 0.92
     assert "Bildungspolitik" in results[0]["content"]
+
+
+@pytest.mark.anyio
+async def test_mcp_tool_execution_unauthorized_without_key(db_session, monkeypatch) -> None:
+    monkeypatch.delenv("POLITIKLAR_API_KEY", raising=False)
+    monkeypatch.delenv("POLITIKLAR_ALLOW_ANONYMOUS_MCP", raising=False)
+
+    server = create_mcp_server(session_factory=lambda: db_session)
+    with pytest.raises(ToolError, match="Authentifizierung fehlgeschlagen"):
+        await server.call_tool("get_member_profile", {"name_or_mdb_id": "99999"})
+
+
+@pytest.mark.anyio
+async def test_mcp_tool_execution_unauthorized_with_invalid_key(db_session, monkeypatch) -> None:
+    monkeypatch.setenv("POLITIKLAR_API_KEY", "pk_invalid_key_xyz")
+    monkeypatch.delenv("POLITIKLAR_ALLOW_ANONYMOUS_MCP", raising=False)
+
+    server = create_mcp_server(session_factory=lambda: db_session)
+    with pytest.raises(ToolError, match="Authentifizierung fehlgeschlagen"):
+        await server.call_tool("get_member_profile", {"name_or_mdb_id": "99999"})
+
+
+@pytest.mark.anyio
+async def test_mcp_tool_execution_succeeds_with_valid_key(db_session, monkeypatch) -> None:
+    user = User(id=uuid4(), email="mcp-test@example.com", name="MCP Tester")
+    db_session.add(user)
+    db_session.flush()
+
+    raw_token = "pk_live_secret_token_12345"
+    key_hash = hashlib.sha256(raw_token.encode("utf-8")).hexdigest()
+    api_key = UserApiKey(
+        id=uuid4(),
+        user_id=user.id,
+        name="Test MCP Key",
+        key_hash=key_hash,
+        key_prefix="pk_live_sec",
+        is_active=True,
+    )
+    db_session.add(api_key)
+    db_session.commit()
+
+    monkeypatch.setenv("POLITIKLAR_API_KEY", raw_token)
+    monkeypatch.delenv("POLITIKLAR_ALLOW_ANONYMOUS_MCP", raising=False)
+
+    server = create_mcp_server(session_factory=lambda: db_session)
+    # Use a sessionmaker so context manager doesn't close our test db_session
+    from sqlalchemy.orm import sessionmaker
+    factory = sessionmaker(bind=db_session.get_bind(), expire_on_commit=False)
+    server = create_mcp_server(session_factory=factory)
+
+    res = await server.call_tool("get_member_profile", {"name_or_mdb_id": "NonExistentPerson"})
+    assert res is not None
+
+    # Query key in new session to verify last_used_at update
+    with factory() as check_session:
+        updated_key = check_session.get(UserApiKey, api_key.id)
+        assert updated_key is not None
+        assert updated_key.last_used_at is not None
+
+
+@pytest.mark.anyio
+async def test_mcp_tool_execution_succeeds_with_anonymous_mode(db_session, monkeypatch) -> None:
+    monkeypatch.delenv("POLITIKLAR_API_KEY", raising=False)
+    monkeypatch.setenv("POLITIKLAR_ALLOW_ANONYMOUS_MCP", "true")
+
+    server = create_mcp_server(session_factory=lambda: db_session)
+    res = await server.call_tool("list_named_votes", {"limit": 2})
+    assert res is not None
+

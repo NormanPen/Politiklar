@@ -63,9 +63,8 @@ export default function PoliticianChat({
     if (!trimmed || isLoading) return;
 
     setError(null);
-    const userMessageId = `user-${Date.now()}`;
     const userMsg: Message = {
-      id: userMessageId,
+      id: crypto.randomUUID(),
       sender: "user",
       text: trimmed,
       timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
@@ -94,7 +93,7 @@ export default function PoliticianChat({
       }
 
       const assistantMsg: Message = {
-        id: `assistant-${Date.now()}`,
+        id: crypto.randomUUID(),
         sender: "assistant",
         text: data.answer || "Keine Antwort erhalten.",
         citations: data.citations || [],

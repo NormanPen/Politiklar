@@ -64,24 +64,79 @@ apps/backend/.venv/bin/politiklar-mcp sse --host 127.0.0.1 --port 8001
 
 ---
 
-## 4. Einbindung in Claude Desktop
+## 4. Authentifizierung (API-Schlüssel)
 
-Füge in deiner Konfigurationsdatei (`~/.config/Claude/claude_desktop_config.json` unter Linux bzw. `~/Library/Application Support/Claude/claude_desktop_config.json` unter macOS) folgenden Block hinzu:
+Der Politiklar MCP-Server validiert Zugriffe über sichere SHA-256-gehashte Tokens (`pk_live_...`), die in der PostgreSQL-Tabelle `user_api_keys` hinterlegt sind:
 
+1. **Schlüssel erzeugen**: Jeder registrierte Nutzer kann unter `http://localhost:3000/konto` im Bereich **API- & MCP-Server-Schlüssel** ein persönliches Zugriffstoken erzeugen.
+2. **Umgebungsvariable**: Der Client übergibt das Token über die Umgebungsvariable `POLITIKLAR_API_KEY`.
+3. **Audit & Expiration**: Bei jedem Tool-Aufruf wird die Gültigkeit geprüft und der Zeitstempel `last_used_at` aktualisiert.
+4. **Lokale Entwicklung**: Für automatisierte Tests oder lokale Offline-Entwicklung kann die Authentifizierung optional via `POLITIKLAR_ALLOW_ANONYMOUS_MCP=true` deaktiviert werden.
+
+---
+
+## 5. Client-Einbindung
+
+### A. Google Antigravity (AGY)
+In `.agents/mcp_config.json` (im Projekt) oder `~/.gemini/antigravity-ide/mcp_config.json`:
 ```json
 {
   "mcpServers": {
     "politiklar": {
-      "command": "/ABSOLUTER/PFAD/ZU/Politiklar/apps/backend/.venv/bin/politiklar-mcp",
+      "command": "/ABSOLUTER/PFAD/apps/backend/.venv/bin/politiklar-mcp",
       "args": ["stdio"],
       "env": {
-        "DATABASE_URL": "postgresql+psycopg://politiklar:change-me-for-local-development@127.0.0.1:5432/politiklar",
-        "GEMINI_API_KEY": "DEIN_GEMINI_API_SCHLUESSEL",
-        "AI_PROVIDER": "gemini"
+        "POLITIKLAR_API_KEY": "pk_live_dein_api_schluessel"
       }
     }
   }
 }
 ```
 
-Nach einem Neustart von Claude Desktop stehen alle 5 Politiklar-Tools automatisch im Chat zur Verfügung.
+### B. Claude Desktop (Anthropic)
+In `claude_desktop_config.json` (macOS: `~/Library/Application Support/Claude/`, Linux: `~/.config/Claude/`, Windows: `%APPDATA%\Claude\`):
+```json
+{
+  "mcpServers": {
+    "politiklar": {
+      "command": "/ABSOLUTER/PFAD/apps/backend/.venv/bin/politiklar-mcp",
+      "args": ["stdio"],
+      "env": {
+        "POLITIKLAR_API_KEY": "pk_live_dein_api_schluessel"
+      }
+    }
+  }
+}
+```
+
+### C. Cursor & Windsurf IDE
+In Cursor unter **Settings → Features → MCP Servers → Add new MCP server**:
+- Name: `politiklar`
+- Type: `command`
+- Command: `/ABSOLUTER/PFAD/apps/backend/.venv/bin/politiklar-mcp stdio`
+- Environment Variables: `POLITIKLAR_API_KEY=pk_live_dein_api_schluessel`
+
+Alternativ als `.cursor/mcp.json` im Projekt-Root.
+
+### D. Python & OpenAI SDK
+```python
+import os
+import asyncio
+from mcp import ClientSession, StdioServerParameters
+from mcp.client.stdio import stdio_client
+
+async def main():
+    server_params = StdioServerParameters(
+        command="apps/backend/.venv/bin/politiklar-mcp",
+        args=["stdio"],
+        env={"POLITIKLAR_API_KEY": "pk_live_dein_api_schluessel", **os.environ}
+    )
+    async with stdio_client(server_params) as (read, write):
+        async with ClientSession(read, write) as session:
+            await session.initialize()
+            profile = await session.call_tool("get_member_profile", {"name_or_mdb_id": "Jan van Aken"})
+            print(profile)
+
+asyncio.run(main())
+```
+

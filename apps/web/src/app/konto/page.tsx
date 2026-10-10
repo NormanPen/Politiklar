@@ -20,6 +20,7 @@ interface FavoriteItem {
 }
 
 import { registerUser } from "@/app/actions/register";
+import McpClientSetup from "@/components/account/McpClientSetup";
 
 export default function AccountPage() {
   const { data: session, status } = useSession();
@@ -28,6 +29,7 @@ export default function AccountPage() {
   const [newKeyName, setNewKeyName] = useState("");
   const [createdRawKey, setCreatedRawKey] = useState<string | null>(null);
   const [isLoadingKeys, setIsLoadingKeys] = useState(false);
+  const [isCreatingKey, setIsCreatingKey] = useState(false);
   const [keyError, setKeyError] = useState<string | null>(null);
 
   // Auth UI state (Login & Registration)
@@ -49,30 +51,28 @@ export default function AccountPage() {
   const userId = session?.user?.id;
   const user = session?.user;
   const role = (user as { role?: string })?.role || "user";
-  const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
 
   const fetchUserData = useCallback(async () => {
-    if (!userId) return;
     try {
       setIsLoadingKeys(true);
       // Fetch API Keys
-      const keysRes = await fetch(`${apiUrl}/api/v1/auth/users/${userId}/api-keys`).catch(() => null);
+      const keysRes = await fetch("/api/user/api-keys").catch(() => null);
       if (keysRes && keysRes.ok) {
         const data = await keysRes.json();
-        setApiKeys(data);
+        setApiKeys(Array.isArray(data) ? data : []);
       }
       // Fetch Favorites
-      const favsRes = await fetch(`${apiUrl}/api/v1/auth/users/${userId}/favorites`).catch(() => null);
+      const favsRes = await fetch("/api/user/favorites").catch(() => null);
       if (favsRes && favsRes.ok) {
         const data = await favsRes.json();
-        setFavorites(data);
+        setFavorites(Array.isArray(data) ? data : []);
       }
     } catch {
       // Backend might be quiet
     } finally {
       setIsLoadingKeys(false);
     }
-  }, [userId, apiUrl]);
+  }, []);
 
   async function handleCredentialsLogin(e: React.FormEvent) {
     e.preventDefault();
@@ -130,24 +130,27 @@ export default function AccountPage() {
 
   async function handleCreateApiKey(e: React.FormEvent) {
     e.preventDefault();
-    if (!userId || !newKeyName.trim()) return;
+    if (isCreatingKey) return;
     try {
+      setIsCreatingKey(true);
       setKeyError(null);
-      const res = await fetch(`${apiUrl}/api/v1/auth/users/${userId}/api-keys`, {
+      const res = await fetch("/api/user/api-keys", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ name: newKeyName.trim() }),
       });
-      if (!res.ok) {
-        throw new Error("Fehler beim Erstellen des Schlüssels");
-      }
       const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.error || "Fehler beim Erstellen des Schlüssels");
+      }
       setCreatedRawKey(data.raw_key);
       setNewKeyName("");
       fetchUserData();
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : "Schlüssel konnte nicht erstellt werden";
       setKeyError(message);
+    } finally {
+      setIsCreatingKey(false);
     }
   }
 
@@ -503,18 +506,26 @@ export default function AccountPage() {
             type="text"
             value={newKeyName}
             onChange={(e) => setNewKeyName(e.target.value)}
-            placeholder="Schlüsselname (z. B. MCP Claude Desktop)"
-            className="flex-1 px-3.5 py-2 text-xs border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
+            placeholder="Schlüsselname (z. B. MCP Claude Desktop – optional)"
+            disabled={isCreatingKey}
+            className="flex-1 px-3.5 py-2 text-xs border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50"
           />
           <button
             type="submit"
-            disabled={!newKeyName.trim()}
-            className="px-4 py-2 bg-gray-900 hover:bg-black text-white text-xs font-semibold rounded-xl transition-colors disabled:opacity-50"
+            disabled={isCreatingKey}
+            className="px-4 py-2 bg-gray-900 hover:bg-black text-white text-xs font-semibold rounded-xl transition-colors disabled:opacity-50 cursor-pointer flex items-center gap-1.5"
           >
-            Schlüssel erzeugen
+            {isCreatingKey ? (
+              <>
+                <span className="w-3 h-3 border-2 border-white/30 border-t-white rounded-full animate-spin inline-block" />
+                <span>Wird erzeugt...</span>
+              </>
+            ) : (
+              <span>Schlüssel erzeugen</span>
+            )}
           </button>
         </form>
-        {keyError && <p className="text-xs text-red-600">{keyError}</p>}
+        {keyError && <p className="text-xs text-red-600 font-medium">{keyError}</p>}
 
         {/* Existing keys */}
         <div>
@@ -539,6 +550,9 @@ export default function AccountPage() {
             </div>
           )}
         </div>
+
+        {/* Interactive Multi-Client MCP Guide */}
+        <McpClientSetup apiKey={createdRawKey} />
       </div>
     </div>
   );

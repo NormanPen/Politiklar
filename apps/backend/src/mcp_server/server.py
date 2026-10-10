@@ -8,6 +8,7 @@ from sqlalchemy.orm import Session, sessionmaker
 
 from core.settings import Settings
 from db.relational.session import create_session_factory
+from .auth import check_mcp_auth
 from .tools.rag_tools import query_bundestag_rag, query_speeches_semantic
 from .tools.sql_tools import list_recent_named_votes, query_member_profile, query_named_vote
 
@@ -44,6 +45,7 @@ def create_mcp_server(
     )
     def get_member_profile(name_or_mdb_id: str) -> dict[str, Any]:
         with _get_session() as session:
+            check_mcp_auth(session)
             return query_member_profile(session, name_or_mdb_id)
 
     @server.tool(
@@ -51,6 +53,7 @@ def create_mcp_server(
     )
     def get_named_vote(title_or_id: str) -> dict[str, Any]:
         with _get_session() as session:
+            check_mcp_auth(session)
             return query_named_vote(session, title_or_id)
 
     @server.tool(
@@ -58,6 +61,7 @@ def create_mcp_server(
     )
     def list_named_votes(limit: int = 10, electoral_term: int = 21) -> list[dict[str, Any]]:
         with _get_session() as session:
+            check_mcp_auth(session)
             return list_recent_named_votes(session, limit=limit, electoral_term=electoral_term)
 
     @server.tool(
@@ -65,6 +69,7 @@ def create_mcp_server(
     )
     def ask_bundestag_rag(question: str) -> dict[str, Any]:
         with _get_session() as session:
+            check_mcp_auth(session)
             return query_bundestag_rag(session, app_settings, question)
 
     @server.tool(
@@ -72,6 +77,7 @@ def create_mcp_server(
     )
     def search_speeches(query: str, limit: int = 5) -> list[dict[str, Any]]:
         with _get_session() as session:
+            check_mcp_auth(session)
             return query_speeches_semantic(session, app_settings, query, limit=limit)
 
     return server
