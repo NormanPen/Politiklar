@@ -19,3 +19,5 @@ var/dumps/
 apps/web/node_modules/
 apps/web/.next/
 .agents/**/mcp_config.json
+
+nextsteps.txt
