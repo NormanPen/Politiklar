@@ -18,18 +18,18 @@ def ask_question(
     settings: Settings = Depends(get_settings),
 ) -> RagQueryResponse:
     """Answers a question strictly grounded on retrieved official Bundestag records."""
-    if not settings.gemini_api_key:
+    service = RagService(settings)
+    if not service.provider.is_configured:
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-            detail="Gemini API is not configured on this server.",
+            detail=f"{service.provider.name.capitalize()} API is not configured on this server.",
         )
-    service = RagService(settings)
     try:
         result = service.generate_answer(db, payload.question)
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_502_BAD_GATEWAY,
-            detail=f"Error querying Gemini RAG service: {str(e)}",
+            detail=f"Error querying {service.provider.name.capitalize()} RAG service: {str(e)}",
         )
 
     return RagQueryResponse(
@@ -56,12 +56,12 @@ def semantic_search(
     settings: Settings = Depends(get_settings),
 ) -> list[ChunkItem]:
     """Performs semantic similarity search against pgvector without LLM generation."""
-    if not settings.gemini_api_key:
+    service = RagService(settings)
+    if not service.provider.is_configured:
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-            detail="Gemini API is not configured on this server.",
+            detail=f"{service.provider.name.capitalize()} API is not configured on this server.",
         )
-    service = RagService(settings)
     query_vector = service.get_query_embedding(payload.question)
     chunks = service.search_similar_chunks(db, query_vector, top_k=payload.top_k)
 

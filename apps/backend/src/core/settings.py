@@ -23,6 +23,7 @@ class Settings(BaseSettings):
     api_version: str = "0.1.0"
     api_cors_origins: str = "http://localhost:3000,http://127.0.0.1:3000"
     auth_secret: str = ""
+    ai_provider: str = "gemini"
     gemini_api_key: str = ""
     gemini_chat_model: str = "gemini-3.8-flash"
     gemini_embedding_model: str = "models/gemini-embedding-001"

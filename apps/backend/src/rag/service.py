@@ -12,6 +12,7 @@ from core.settings import Settings
 from db.relational.models import DocumentChunk
 from .embeddings import get_embeddings_client
 from .prompts import INSUFFICIENT_EVIDENCE_MESSAGE, RAG_SYSTEM_PROMPT
+from .providers import AIProvider, get_ai_provider
 
 
 @dataclass(frozen=True)
@@ -35,24 +36,17 @@ class RagResponse:
 
 
 class RagService:
-    def __init__(self, settings: Settings) -> None:
+    def __init__(self, settings: Settings, provider: AIProvider | None = None) -> None:
         self.settings = settings
+        self.provider = provider or get_ai_provider(settings)
 
     def get_query_embedding(self, query_text: str) -> list[float]:
-        """Generates embedding vector for a user query."""
-        client = get_embeddings_client(self.settings)
-        return client.embed_query(
-            query_text,
-            output_dimensionality=self.settings.gemini_embedding_dimension,
-        )
+        """Generates embedding vector for a user query via the configured AI provider."""
+        return self.provider.embed_query(query_text)
 
     def get_documents_embeddings(self, texts: list[str]) -> list[list[float]]:
-        """Generates embedding vectors for a list of document chunks."""
-        client = get_embeddings_client(self.settings)
-        return client.embed_documents(
-            texts,
-            output_dimensionality=self.settings.gemini_embedding_dimension,
-        )
+        """Generates embedding vectors for a list of document chunks via the configured AI provider."""
+        return self.provider.embed_documents(texts)
 
     def search_similar_chunks(
         self,
@@ -134,13 +128,7 @@ class RagService:
             question=question,
         )
 
-        llm = ChatGoogleGenerativeAI(
-            model=self.settings.gemini_chat_model,
-            google_api_key=self.settings.gemini_api_key,
-            temperature=0.0,
-        )
-        response = llm.invoke(prompt)
-        answer_text = str(response.content).strip()
+        answer_text = self.provider.generate_text(prompt)
 
         is_sufficient = INSUFFICIENT_EVIDENCE_MESSAGE not in answer_text
 
