@@ -41,7 +41,18 @@ class RagService:
     def get_query_embedding(self, query_text: str) -> list[float]:
         """Generates embedding vector for a user query."""
         client = get_embeddings_client(self.settings)
-        return client.embed_query(query_text)
+        return client.embed_query(
+            query_text,
+            output_dimensionality=self.settings.gemini_embedding_dimension,
+        )
+
+    def get_documents_embeddings(self, texts: list[str]) -> list[list[float]]:
+        """Generates embedding vectors for a list of document chunks."""
+        client = get_embeddings_client(self.settings)
+        return client.embed_documents(
+            texts,
+            output_dimensionality=self.settings.gemini_embedding_dimension,
+        )
 
     def search_similar_chunks(
         self,

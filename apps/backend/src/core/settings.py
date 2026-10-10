@@ -24,8 +24,9 @@ class Settings(BaseSettings):
     api_cors_origins: str = "http://localhost:3000,http://127.0.0.1:3000"
     auth_secret: str = ""
     gemini_api_key: str = ""
-    gemini_chat_model: str = "gemini-2.5-flash"
-    gemini_embedding_model: str = "text-embedding-004"
+    gemini_chat_model: str = "gemini-3.8-flash"
+    gemini_embedding_model: str = "models/gemini-embedding-001"
+    gemini_embedding_dimension: int = 768
     rag_top_k: int = 5
     rag_score_threshold: float = 0.5
 

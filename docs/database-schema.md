@@ -248,6 +248,6 @@ erDiagram
     }
 ```
 
-`document_chunks` speichert semantische Abschnitte parlamentarischer Texte (z. B. Reden oder spaeter Drucksachen) inklusive ihrer 768-dimensionalen Vektoreinbettungen (Google Gemini `text-embedding-004`). Ein HNSW-Index (`vector_cosine_ops`) beschleunigt Aehnlichkeitssuchen fuer die evidenzbasierte Politiklar-RAG-Pipeline. Jeder Chunk ist strikt ueber `source_document_id` an die amtliche Primaerquelle gebunden.
+`document_chunks` speichert semantische Abschnitte parlamentarischer Texte (z. B. Reden oder spaeter Drucksachen) inklusive ihrer 768-dimensionalen Vektoreinbettungen (Google Gemini `models/gemini-embedding-001`). Ein HNSW-Index (`vector_cosine_ops`) beschleunigt Aehnlichkeitssuchen fuer die evidenzbasierte Politiklar-RAG-Pipeline. Jeder Chunk ist strikt ueber `source_document_id` an die amtliche Primaerquelle gebunden.
 
 Zurueck zur [Dokumentationsuebersicht](README.md).

@@ -9,8 +9,8 @@ Diese Dokumentation beschreibt die Vorbereitung und Architektur des RAG-Systems 
 | Komponente | Technologie / Modell | Zweck |
 | --- | --- | --- |
 | **Vektordatenbank** | PostgreSQL 17 + `pgvector` (Extension) | Vektorspeicherung mit HNSW-Index (`vector_cosine_ops`) |
-| **Embedding-Modell** | Google Gemini `models/text-embedding-004` (768 Dimensionen) | Vektorisierung von Textabschnitten und Suchanfragen |
-| **LLM / Chat** | Google Gemini `gemini-2.5-flash` | Evidenzbasierte, parteipolitisch neutrale Antwortgenerierung |
+| **Embedding-Modell** | Google Gemini `models/gemini-embedding-001` (768 Dimensionen via `output_dimensionality`) | Vektorisierung von Textabschnitten und Suchanfragen |
+| **LLM / Chat** | Google Gemini `gemini-3.8-flash` | Evidenzbasierte, parteipolitisch neutrale Antwortgenerierung |
 | **Orchestrierung** | LangChain (`langchain`, `langchain-google-genai`) | Chunking, Prompt-Management und Schnittstelle zum LLM |
 | **Backend-API** | FastAPI (`apps/backend/src/api/routers/rag.py`) | REST-Endpunkte für Belegabfragen und semantische Suche |
 
@@ -103,8 +103,9 @@ Führt eine reine semantische Vektorsuche ohne LLM-Aufruf durch und gibt die äh
 In `.env.development` (lokal) bzw. `.env` (Container):
 ```bash
 GEMINI_API_KEY="DEIN_API_SCHLUESSEL"
-GEMINI_CHAT_MODEL="gemini-2.5-flash"
-GEMINI_EMBEDDING_MODEL="models/text-embedding-004"
+GEMINI_CHAT_MODEL="gemini-3.8-flash"
+GEMINI_EMBEDDING_MODEL="models/gemini-embedding-001"
+GEMINI_EMBEDDING_DIMENSION=768
 RAG_TOP_K=5
 RAG_SCORE_THRESHOLD=0.5
 ```
